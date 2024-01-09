@@ -78,9 +78,4 @@ def read_i_th_line_from_partition(files, i, p):
 
     return sum(lines)
 
-# Example usage
-files = ['file1.txt', 'file2.txt']
-# i = 2  # For example, reading the second line from each file
-# P = 1  # Partition number
-# lines = read_i_th_line_from_partition(files, i, P)
-print(distribute_work(files, 3))
+print("I have started")
