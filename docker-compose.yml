@@ -1,0 +1,44 @@
+version: '3'
+services:
+  cache:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - cache:/data
+
+  rabbit:
+    image: rabbitmq:3.8.5-management
+    container_name: rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: always
+
+  workers:
+    image: workers
+    build: 
+      context: ./workers
+      dockerfile: Dockerfile-dev
+    container_name: workers
+    deploy:
+      mode: replicated
+      replicas: 6 # number of workers for testing
+    ports:
+      - "4001:80"
+    environment:
+      - PORT=80
+      - RABBIT=amqp://guest:guest@rabbit:5672
+      - NODE_ENV=development
+    depends_on:
+      - rabbit
+    restart: "no"
+  
+
+
+volumes:
+  cache:
+    driver: local
