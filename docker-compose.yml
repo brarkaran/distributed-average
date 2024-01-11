@@ -1,14 +1,45 @@
 version: '3'
 services:
-  cache:
-    image: redis
-    container_name: redis
-    restart: always
+  # cache:
+  #   image: redis
+  #   container_name: redis
+  #   restart: always
+  #   ports:
+  #     - '6379:6379'
+  #   command: redis-server --save 20 1 --loglevel warning
+  #   volumes: 
+  #     - cache:/data
+
+  # db:
+  #   image: mongo:5
+  #   container_name: db
+  #   ports:
+  #     - "27017:27017"
+  #   command: ["--replSet", "rs0", "--bind_ip_all"]
+  #   environment:
+  #     - MONGODB_ADVERTISED_HOSTNAME=localhost
+  #   expose:
+  #     - "27017"
+  #   restart: always
+  #   healthcheck:
+  #     test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+  #     interval: 5s
+  #     timeout: 30s
+  #     start_period: 0s
+  #     start_interval: 1s
+  #     retries: 30
+
+  api:
+    image: api
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    env_file:
+      - ./api/.env
+    
     ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning
-    volumes: 
-      - cache:/data
+      - "8000:8000"
+    command: node build/index.js
 
   rabbit:
     image: rabbitmq:3.8.5-management
@@ -22,22 +53,39 @@ services:
     image: workers
     build: 
       context: ./workers
-      dockerfile: Dockerfile-dev
-    container_name: workers
+      dockerfile: Dockerfile-workers
     deploy:
       mode: replicated
-      replicas: 6 # number of workers for testing
-    ports:
-      - "4001:80"
+      replicas: 12 # number of workers for testing
+    # environment:
+    #   - RABBIT=amqp://guest:guest@rabbit:5672
     environment:
-      - PORT=80
-      - RABBIT=amqp://guest:guest@rabbit:5672
-      - NODE_ENV=development
+      - API_HOST=http://api:8000
+      - PYTHONUNBUFFERED=1
     depends_on:
       - rabbit
-    restart: "no"
-  
 
+    restart: "no"
+
+  # orch:
+  #   image: orch
+  #   container_name: orch
+  #   build: 
+  #     context: ./workers
+  #     dockerfile: Dockerfile-orch
+  #   ports:
+  #     - "3000:5000"
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #   # deploy:
+  #   #   mode: replicated
+  #   #   replicas: 6 # number of workers for testing
+  #   # environment:
+  #   #   - RABBIT=amqp://guest:guest@rabbit:5672
+
+  #   depends_on:
+  #     - rabbit
+  #   restart: "no"
 
 volumes:
   cache:

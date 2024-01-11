@@ -21,7 +21,7 @@ const s3Client = new S3Client({
 export const uploadFileToS3 = async (file: Express.Multer.File, fileId: string): Promise<string> => {
     const uploadParams = {
         Bucket: process.env.AWS_S3_BUCKET,
-        Key: fileId,
+        Key: `input/${fileId}`,
         Body: file.buffer,
     };
 
@@ -34,7 +34,7 @@ export const uploadFileToS3 = async (file: Express.Multer.File, fileId: string):
 export const getFileFromS3 = async (fileKey: string): Promise<Readable> => {
     const getParams = {
         Bucket: process.env.AWS_S3_BUCKET,
-        Key: fileKey,
+        Key: `input/${fileKey}`,
     };
 
     const command = new GetObjectCommand(getParams);
