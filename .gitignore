@@ -1,3 +1,6 @@
 **/node_modules/
 .env*
 minikube-darwin-arm64
+input
+result
+**/.DS_Store
