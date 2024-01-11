@@ -8,7 +8,8 @@ import tempfile
 import time
 from abc import ABC, abstractmethod
 from requests.adapters import HTTPAdapter, Retry
-
+import traceback 
+import random
 # Constants
 BASE_URL = os.getenv('API_HOST')
 
@@ -21,6 +22,8 @@ def setup_http_session():
     session = requests.Session()
     session.mount('http://', HTTPAdapter(max_retries=retries))
     return session
+
+s = setup_http_session()
 
 # Abstract Base Class for File Handling
 class FileHandler(ABC):
@@ -36,15 +39,13 @@ class FileHandler(ABC):
 class LocalFileHandler(FileHandler):
     def get_file(self, file_id):
         try:
-            with open(file_id, 'rb') as file:
-                return file.read()
-        except IOError as e:
+            return np.loadtxt(f"{file_id}", delimiter=',')
+        except Exception as e:
             raise Exception(f"Error reading file {file_id}: {e}")
 
-    def upload_file(self, file_id, file_path):
+    def upload_file(self, file_id, array_data):
         try:
-            with open(file_id, 'wb') as file:
-                file.write(open(file_path, 'rb').read())
+            np.savetxt(file_id, array_data, delimiter=',', fmt='%g')
         except IOError as e:
             raise Exception(f"Error writing file {file_id}: {e}")
 
@@ -60,6 +61,7 @@ class ApiFileHandler(FileHandler):
         if response.status_code == 200:
             return response.content
         else:
+            traceback.print_exc() 
             raise Exception(f"Failed to retrieve data from {api_url}. Status code: {response.status_code}")
 
     def upload_file(self, file_id, file_path):
@@ -67,6 +69,7 @@ class ApiFileHandler(FileHandler):
             files = {'file': (file_path, file)}
             response = self.session.post(f"{self.base_url}/api/files/{file_id}", files=files)
             if response.status_code != 200:
+                traceback.print_exc() 
                 raise Exception(f"Failed to upload result to {file_id}. Status code: {response.status_code}")
 
 # Task Management Class
@@ -75,34 +78,56 @@ class TaskWorker:
         self.file_handler = file_handler
         self.queue_name = queue_name
 
+    def acquire_task(self, task_id):
+        """Call the acquire task API endpoint."""
+        url = f'{BASE_URL}/tasks/{task_id}/acquire'
+        response = s.post(url)
+        if response.status_code == 200:
+            status = "acquired"
+        elif response.status_code == 404:
+            status = "completed"
+        else:
+            status = "error"
+        return status
+    
+    def complete_task(self, task_id, output):
+        """Call the complete task API endpoint."""
+        url = f'{BASE_URL}/tasks/{task_id}/complete'
+        data = {'output': output}
+        response = s.post(url, json=data)
+        return response.json()
+
     def process_task(self, task):
         try:
+            
             task_id = task['id']
+            self.acquire_task(task_id)
             filenames = task['input']
             output_file_name = f"{task_id}.csv"
+
+            # if random.random() < 0.5:
+            #     print("I am crashing")
+            #     raise Exception("Crash!")
 
             average_array = self.average_files(filenames)
             if average_array is None:
                 raise Exception("Error in averaging files")
 
-            with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
-                np.savetxt(temp_file, average_array, delimiter=',', fmt='%g')
-                self.file_handler.upload_file(output_file_name, temp_file.name)
+            self.file_handler.upload_file(f"app/{task_id}.csv", average_array)
 
             # Assuming there is a method in file_handler to complete the task
-            self.file_handler.complete_task(task_id, output_file_name)
+            self.complete_task(task_id, [output_file_name])
         except Exception as e:
+            traceback.print_exc() 
             logging.error(f"Error processing task {task['id']}: {e}")
+            raise e
 
     def average_files(self, filenames):
         arrays = []
         for file_id in filenames:
             try:
-                binary_content = self.file_handler.get_file(file_id)
-                with tempfile.NamedTemporaryFile(mode='wb', delete=False) as temp_file:
-                    temp_file.write(binary_content)
-                    data = np.loadtxt(temp_file.name, delimiter=',')
-                    arrays.append(data)
+                data = self.file_handler.get_file(f"app/{file_id}")
+                arrays.append(data)
             except Exception as e:
                 logging.error(f"Error processing file {file_id}: {e}")
                 return None
@@ -112,8 +137,26 @@ class TaskWorker:
             return None
 
         stacked_array = np.stack(arrays)
-        average_array = np.mean(stacked_array, axis=0)
+        average_array = np.sum(stacked_array, axis=0)
         return average_array
+    
+    def on_message_received(self, ch, method, properties, body):
+        task = json.loads(body)
+        self.process_task(task)
+        if random.random() < 0.7:
+            # raise Exception("Crash!")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        else:
+            print("I not acknowledging")
+    
+    def start(self, rabbitmq_host):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
+        channel = connection.channel()
+        channel.queue_declare(queue=self.queue_name, durable=True)
+        channel.basic_qos(prefetch_count=2)
+        channel.basic_consume(queue=self.queue_name, on_message_callback=self.on_message_received)
+        logging.info("Worker started. Waiting for tasks...")
+        channel.start_consuming()
 
 # Main Function
 def main():

@@ -1,21 +1,23 @@
-import random
+import numpy as np
+import os
 
-def create_files_and_sum_numbers(num_files, count):
-    # Initialize a list to store the sums of each index
-    sums = [0] * count
+def create_files_and_sum_numbers_vectorized(num_files, count):
+    # Create the directory if it doesn't exist
+    directory = '/Users/neoatom/dev/starship/dynamofl/input'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    # Loop to create each file
+    # Generate a 2D NumPy array of random numbers (num_files x count)
+    numbers = np.random.rand(num_files, count)
+
+    # Write the numbers to files
     for i in range(num_files):
-        with open(f'/Users/neoatom/dev/starship/dynamofl/input/{i}.txt', 'w') as file:
-            print(f'"/Users/neoatom/dev/starship/dynamofl/input/{i}.txt",')
-            # Generate 'count' random numbers and write them to the file
-            numbers = [random.random() for _ in range(count)]
-            file.write('\n'.join(map(str, numbers)))
+        np.savetxt(f'{directory}/{i}.txt', numbers[i, :], fmt='%f')
+        print(f'"{directory}/{i}.txt"')
 
-            # Update the sums list by adding the current numbers index-wise
-            sums = [sum(x) for x in zip(sums, numbers)]
+    # Sum across the first axis (summing each index across all files)
+    sums = np.sum(numbers, axis=0)
 
+    return sums.tolist()
 
-    return sums
-
-print(create_files_and_sum_numbers(10000, 2))
+print(create_files_and_sum_numbers_vectorized(1000, 200))

@@ -56,16 +56,18 @@ services:
       dockerfile: Dockerfile-workers
     deploy:
       mode: replicated
-      replicas: 12 # number of workers for testing
+      replicas: 10 # number of workers for testing
     # environment:
     #   - RABBIT=amqp://guest:guest@rabbit:5672
     environment:
       - API_HOST=http://api:8000
       - PYTHONUNBUFFERED=1
+    volumes:
+      - /Users/neoatom/dev/starship/dynamofl/input:/app
     depends_on:
       - rabbit
 
-    restart: "no"
+    restart: "always"
 
   # orch:
   #   image: orch

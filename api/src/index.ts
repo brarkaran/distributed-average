@@ -169,7 +169,7 @@ async function updateMasterJobById(masterJobId: string, updateData: Partial<IMas
 export const acquireTask = async (taskId: string, session: mongoose.ClientSession | null = null): Promise<{ success: boolean; message: string; task?: any }> => {
     try {
         const updatedTask = await Task.findOneAndUpdate(
-            { _id: taskId, status: { $ne: TaskStatus.COMPLETED } },
+            { _id: taskId, status: { $ne: TaskStatus.COMPLETED } }, // TODO: also don't let SCHEDULED tasks be acquired, but then we need to handle rescheduling if node crashes
             { $set: { status: TaskStatus.SCHEDULED, startTime: new Date().toISOString() } },
             { new: true, session }
         );
@@ -200,66 +200,10 @@ export const completeTask = async (taskId: string, output: string[]) => {
 
         console.log(`Completed Task ${taskId}`);
 
-        const job = await Job.findOneAndUpdate(
+        await Job.findOneAndUpdate(
             { _id: task.jobId },
             { $inc: { 'pendingTasks': -1 } }
         )
-
-        // if (job?.pendingTasks == 0) {
-        //     console.log("all tasks for job are completed, update Job");
-        //     const tasks = await Task.find({
-        //         jobId: task.jobId,
-        //         status: TaskStatus.COMPLETED
-        //     }, null, { session });
-        //     const combinedOutput = tasks.flatMap(x => x.output || []);
-        //     job.status = JobStatus.COMPLETED;
-        //     job.output = combinedOutput;
-        //     job.save({ session })
-
-        //     if (combinedOutput.length == 1) {
-        //         console.log(combinedOutput);
-        //         console.log("Master Job finished");
-        //         await updateMasterJobById(job.masterId, {
-        //             status: MasterJobStatus.COMPLETED,
-        //             output: combinedOutput
-        //         }, session);
-        //     } else {
-        //         await createJob(job.masterId, combinedOutput, session);
-        //     }
-        // }
-
-        // const result = await Task.aggregate([
-        //     { $match: { jobId: task.jobId } },
-        //     { $group: { _id: "$jobId", allCompleted: { $min: { $cond: [{ $eq: ["$status", TaskStatus.COMPLETED] }, 1, 0] } } } }
-        // ], { session, readConcern: { level: "majority" } });
-
-        // console.log(`${taskId} ${JSON.stringify(result)}`);
-
-        // if (result.length > 0 && result[0].allCompleted === 1) {
-        //     console.log("all tasks for job are completed, update Job");
-        //     const tasks = await Task.find({
-        //         jobId: task.jobId,
-        //         status: TaskStatus.COMPLETED
-        //     }, null, { session });
-
-        //     const combinedOutput = tasks.flatMap(x => x.output || []);
-        //     const finishedJob = await updateJobById(task.jobId, {
-        //         status: JobStatus.COMPLETED,
-        //         output: combinedOutput
-        //     }, session);
-
-        //     if (combinedOutput.length == 1) {
-        //         console.log(combinedOutput);
-        //         console.log("Master Job finished");
-        //         await updateMasterJobById(finishedJob.masterId, {
-        //             status: MasterJobStatus.COMPLETED,
-        //             output: combinedOutput
-        //         }, session);
-        //     } else {
-        //         await createJob(finishedJob.masterId, combinedOutput, session);
-        //     }
-        // }
-
         await session.commitTransaction();
     } catch (error) {
         await session.abortTransaction();
@@ -301,7 +245,7 @@ async function checkForFinishedJobs() {
     } catch (error) {
         console.error(`Error in checkForFinishedJobs: ${error}`);
     } finally {
-        await sleep(5000); // Wait for 5 seconds
+        await sleep(1); // Wait for 5 seconds
         checkForFinishedJobs(); // Schedule next execution
     }
 }
