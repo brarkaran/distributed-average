@@ -143,11 +143,11 @@ class TaskWorker:
     def on_message_received(self, ch, method, properties, body):
         task = json.loads(body)
         self.process_task(task)
-        if random.random() < 0.7:
-            # raise Exception("Crash!")
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-        else:
-            print("I not acknowledging")
+        # if random.random() < 0.7:
+        #     # raise Exception("Crash!")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+        # else:
+        #     print("I not acknowledging")
     
     def start(self, rabbitmq_host):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))

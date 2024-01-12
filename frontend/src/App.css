@@ -1,0 +1,88 @@
+/* Overall background and color scheme */
+body {
+  background-color: #1E1E1E;
+  color: #D4D4D4;
+  font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+/* Card styling */
+.card {
+  background-color: #252526;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.card-header {
+  background-color: #007ACC;
+  color: #ffffff;
+  font-size: 20px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+/* Form input and button styling */
+.form-control {
+  background-color: #1E1E1E;
+  color: #D4D4D4;
+  border: 1px solid #3C3C3C;
+  border-radius: 4px;
+}
+
+.form-control:focus {
+  border-color: #007ACC;
+  box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+}
+
+.btn-primary {
+  background-color: #007ACC;
+  border-color: #007ACC;
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.btn-primary:hover {
+  background-color: #005FB8;
+}
+
+/* Table styling */
+.table {
+  background-color: #0a0a0a;
+}
+
+.table th,
+.table td {
+  color: #D4D4D4;
+}
+
+.table thead th {
+  background-color: #3C3C3C;
+  border-bottom: 2px solid #007ACC;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #2A2D2E;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #2B2B2B;
+}
+
+.table-striped tbody tr:nth-of-type(even) {
+  background-color: #252526;
+}
+
+/* Additional spacing and alignment */
+.container {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Custom styles for responsiveness and alignment */
+@media (max-width: 768px) {
+
+  .card,
+  .table-responsive {
+    margin: 10px;
+  }
+}
