@@ -16,6 +16,67 @@ BASE_URL = os.getenv('API_HOST')
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
 
+from concurrent.futures import ThreadPoolExecutor
+
+class FileProcessor:
+    def __init__(self):
+
+        self.executor = ThreadPoolExecutor()
+
+    def read_file_sync(self, file_path):
+        try:
+            # Reading file directly, synchronously
+            data = np.loadtxt(file_path, delimiter=',')
+            # Create a memory-mapped array for the data
+            # memmap_array = np.memmap(file_path, dtype=data.dtype, mode='r', shape=data.shape)
+            # print(f"MMAP RESULT {memmap_array}")
+            return data
+        except Exception as e:
+            logging.error(f"Error processing file {file_path}: {e}")
+            return None
+
+    def average_files(self, file_paths):
+        def process_batch(batch):
+            total_array = np.zeros(self.read_file_sync(f"app/{batch[0]}").shape, dtype=np.float64)
+            count = 0
+
+            for file_path in batch:
+                data = self.read_file_sync(f"app/{file_path}")
+                if data is not None:
+                    total_array += data
+                    count += 1
+                    del data  # Release the memory
+
+            return total_array, count
+
+        batch_size = 5
+        total_sum = None
+        total_count = 0
+
+        for i in range(0, len(file_paths), batch_size):
+            batch = file_paths[i:i + batch_size]
+            batch_sum, batch_count = process_batch(batch)
+
+            if total_sum is None:
+                total_sum = batch_sum
+            else:
+                total_sum += batch_sum
+
+            total_count += batch_count
+
+        if total_count > 0:
+            return total_sum
+        else:
+            logging.error("No files processed.")
+            return None
+    
+    def upload_file(self, file_id, array_data):
+        try:
+            np.savetxt(file_id, array_data, delimiter=',', fmt='%g')
+        except IOError as e:
+            raise Exception(f"Error writing file {file_id}: {e}")
+
+
 # Utility Functions
 def setup_http_session():
     retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
@@ -72,36 +133,85 @@ class ApiFileHandler(FileHandler):
                 traceback.print_exc() 
                 raise Exception(f"Failed to upload result to {file_id}. Status code: {response.status_code}")
 
+
+from abc import ABC, abstractmethod
+import numpy as np
+class FileHandlerInterface(ABC):
+    
+    @abstractmethod
+    def write(self, data, object_name):
+        pass
+
+    @abstractmethod
+    def read(self, object_name):
+        pass
+
+import boto3
+import io
+from concurrent.futures import ThreadPoolExecutor
+
+class S3FileHandler(FileHandlerInterface):
+    def __init__(self, bucket_name, aws_access_key_id='AKIA3ATNYIT3WISENLXD', aws_secret_access_key='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', encoding='utf-8'):
+        self.session = boto3.Session(
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
+        )
+        self.s3 = self.session.client('s3')
+        self.bucket_name = bucket_name
+        self.encoding = encoding
+
+    def write(self, data, object_name):
+        try:
+            self.s3.put_object(Bucket=self.bucket_name, Key=object_name, Body=data.encode(self.encoding))
+            print(f"Uploaded {object_name} to {self.bucket_name}")
+        except Exception as e:
+            print(f"Error uploading {object_name}: {e}")
+
+    def read(self, object_name):
+        try:
+            with io.BytesIO() as data:
+                self.s3.download_fileobj(self.bucket_name, object_name, data)
+                data.seek(0)
+                return data.read().decode(self.encoding)
+        except Exception as e:
+            print(f"Error downloading {object_name}: {e}")
+            return None
+
 # Task Management Class
 class TaskWorker:
     def __init__(self, file_handler, queue_name):
         self.file_handler = file_handler
         self.queue_name = queue_name
 
-    def acquire_task(self, task_id):
+    def acquire_task(self, task_id, job_id):
         """Call the acquire task API endpoint."""
-        url = f'{BASE_URL}/tasks/{task_id}/acquire'
+        url = f'{BASE_URL}/job/{job_id}/task/{task_id}/start'
+        print(url)
         response = s.post(url)
+        print(response)
         if response.status_code == 200:
             status = "acquired"
         elif response.status_code == 404:
             status = "completed"
         else:
             status = "error"
+        print(f"STATUS {status}")
         return status
     
-    def complete_task(self, task_id, output):
+    def complete_task(self, task_id, job_id, output):
         """Call the complete task API endpoint."""
-        url = f'{BASE_URL}/tasks/{task_id}/complete'
+        url = f'{BASE_URL}/job/{job_id}/task/{task_id}/complete'
         data = {'output': output}
         response = s.post(url, json=data)
+        print(f"RESPONSE {response}")
         return response.json()
 
     def process_task(self, task):
         try:
             
             task_id = task['id']
-            self.acquire_task(task_id)
+            job_id = task['jobId']
+            self.acquire_task(task_id, job_id) # Handler responses of acquire task
             filenames = task['input']
             output_file_name = f"{task_id}.csv"
 
@@ -113,10 +223,10 @@ class TaskWorker:
             if average_array is None:
                 raise Exception("Error in averaging files")
 
-            self.file_handler.upload_file(f"app/{task_id}.csv", average_array)
+            self.file_handler.write(np.array2string(average_array, separator=',')[1:-1], f"{task_id}.csv")
 
             # Assuming there is a method in file_handler to complete the task
-            self.complete_task(task_id, [output_file_name])
+            self.complete_task(task_id, job_id, [output_file_name])
         except Exception as e:
             traceback.print_exc() 
             logging.error(f"Error processing task {task['id']}: {e}")
@@ -126,7 +236,7 @@ class TaskWorker:
         arrays = []
         for file_id in filenames:
             try:
-                data = self.file_handler.get_file(f"app/{file_id}")
+                data = np.fromstring(self.file_handler.read(f"{file_id}"), dtype=float, sep=',')
                 arrays.append(data)
             except Exception as e:
                 logging.error(f"Error processing file {file_id}: {e}")
@@ -161,9 +271,8 @@ class TaskWorker:
 # Main Function
 def main():
     time.sleep(5)
-    use_local_fs = os.getenv('USE_LOCAL_FS', 'True').lower() == 'true'
-    file_handler = LocalFileHandler() if use_local_fs else ApiFileHandler(BASE_URL, setup_http_session())
-    worker = TaskWorker(file_handler, 'task_queue')
+    file_processor = S3FileHandler(os.getenv('AWS_BUCKET_NAME', 'codebucker'))
+    worker = TaskWorker(file_processor, 'worker-queue')
     worker.start('rabbit')
 
 if __name__ == '__main__':
