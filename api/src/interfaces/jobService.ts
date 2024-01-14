@@ -8,3 +8,4 @@ export interface IJobService {
     getJob(jobId: string): Job | null;
     getJobs(): Job[];
 }
+
