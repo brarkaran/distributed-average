@@ -18,7 +18,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
+      - name: List directory contents
+        run: find .
       - name: Build and push Docker image
         run: |
           cd api
