@@ -1,10 +1,10 @@
-name: Build and Push API Docker Image
+name: Build and Push Workers Docker Image
 
 on:
   push:
     paths:
-      - 'api/**'
-      - '.github/workflows/api.yml'
+      - 'workers/**'
+      - '.github/workflows/workers.yml'
 
 jobs:
   build:
@@ -22,6 +22,6 @@ jobs:
         run: find .
       - name: Build and push Docker image
         run: |
-          cd api
-          docker build -t neoatom/api:latest . --no-cache=true --platform=linux/amd64
-          docker push neoatom/api:latest
+          cd workers
+          docker build -t neoatom/workers:latest . --no-cache=true --platform=linux/amd64
+          docker push neoatom/workers:latest
