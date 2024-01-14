@@ -20,9 +20,14 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./api
-          file: ./api/Dockerfile
-          push: true
-          tags: neoatom/api:latest
+        run: |
+          cd api
+          docker build -t neoatom/api:latest . --no-cache=true --platform=linux/amd64
+          docker push neoatom/api:latest
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: ./api
+      #     file: ./api/Dockerfile
+      #     push: true
+      #     tags: neoatom/api:latest
