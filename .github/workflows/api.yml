@@ -19,10 +19,12 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+      - name: cd into api
         run: |
           cd api
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
