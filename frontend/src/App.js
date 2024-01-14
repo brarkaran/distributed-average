@@ -18,7 +18,7 @@ function App() {
   // Refactored fetchJobs function to call independently
   const fetchJobs = async () => {
     try {
-      const response = await axios.get('http://api.ephemeron.io/job');
+      const response = await axios.get('https://api.ephemeron.io/job');
       setJobs(response.data);
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -39,14 +39,14 @@ function App() {
     setJobSubmissionStatus('');
 
     try {
-      const files = await axios.post('http://api.ephemeron.io/files', {
+      const files = await axios.post('https://api.ephemeron.io/files', {
         numFiles: numberOfFiles,
         numPerFile: countPerFile,
       });
       setIsGeneratingFiles(false);
       setIsSubmittingJob(true);
 
-      await axios.post('http://api.ephemeron.io/job', {
+      await axios.post('https://api.ephemeron.io/job', {
         input: files.data.files,
       });
       setIsSubmittingJob(false);
@@ -72,7 +72,7 @@ function App() {
     <div>
       {/* Right-aligned link to Queue Management */}
       <div className="text-right mt-3 mr-3">
-        <a href="http://queue.ephemeron.io/" target="_blank" rel="noopener noreferrer">
+        <a href="https://queue.ephemeron.io/" target="_blank" rel="noopener noreferrer">
           RabbitMQ Queue Management
         </a>
       </div>
