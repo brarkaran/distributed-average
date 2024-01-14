@@ -3,4 +3,4 @@
 minikube-darwin-arm64
 input
 result
-**/.DS_Store
+.DS_Store

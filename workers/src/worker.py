@@ -153,7 +153,7 @@ class TaskWorker:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
         channel = connection.channel()
         channel.queue_declare(queue=self.queue_name, durable=True)
-        channel.basic_qos(prefetch_count=2)
+        channel.basic_qos(prefetch_count=1)
         channel.basic_consume(queue=self.queue_name, on_message_callback=self.on_message_received)
         logging.info("Worker started. Waiting for tasks...")
         channel.start_consuming()
