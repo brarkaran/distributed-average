@@ -17,9 +17,9 @@ if (process.env.NODE_ENV !== 'production') {
 
 const WORKER_QUEUE = process.env.worker_queue || 'worker-queue';
 const OUTPUT_QUEUE = process.env.output_queue || 'output-queue';
-const RABBIT = process.env.RABBIT!;
+const RABBIT_HOST = process.env.RABBIT_HOST!;
 
-const queueService = new RabbitMQService(RABBIT);
+const queueService = new RabbitMQService(RABBIT_HOST);
 const workerService = new WorkerService();
 const jobService = new JobService();
 const taskService = new TaskService();
