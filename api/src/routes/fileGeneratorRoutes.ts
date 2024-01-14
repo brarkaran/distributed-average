@@ -15,5 +15,5 @@ module.exports = (fileGenerator: FileGenerator) => {
         console.log(files)
         res.status(200).json({ files });
     });
-    return router;
+    return router; 
 };
