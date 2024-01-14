@@ -1,5 +1,5 @@
 // src/interfaces/IJobService.ts
-import { Job } from '../models/Job';
+import { Job } from '../models/job';
 
 export interface IJobService {
     addJob(job: Omit<Job, "id" | "startTime" | "endTime" | "duration" | "output" | "status">): Job;
