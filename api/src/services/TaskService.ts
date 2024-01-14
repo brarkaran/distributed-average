@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Task, TaskStatus } from '../models/Task';
+import { Task, TaskStatus } from '../models/task';
 
 
 export class TaskService {

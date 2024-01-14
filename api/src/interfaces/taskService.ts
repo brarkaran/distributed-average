@@ -1,5 +1,5 @@
 // src/interfaces/ITaskService.ts
-import { Task, TaskStatus } from '../models/Task';
+import { Task, TaskStatus } from '../models/task';
 
 export interface ITaskService {
     addTask(task: Omit<Task, "id" | "startTime" | "endTime" | "duration" | "output" | "status">): Task;

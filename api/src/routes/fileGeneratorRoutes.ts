@@ -1,5 +1,5 @@
 import express from "express";
-import { FileGenerator } from "../services/FileGeneratorService";
+import { FileGenerator } from "../services/fileGeneratorService";
 
 module.exports = (fileGenerator: FileGenerator) => {
     const router = express.Router();

@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
 import { KubeConfig, BatchV1Api, V1Job, V1alpha1ValidatingAdmissionPolicyBindingSpec } from '@kubernetes/client-node';
 import bodyParser from 'body-parser'
-import { MasterService } from './services/MasterService';
-import { WorkerService } from './services/WorkerService';
-import { FileGenerator, LocalStorageStrategy, S3StorageStrategy } from './services/FileGeneratorService';
-import { JobService } from './services/JobService';
-import { TaskService } from './services/TaskService';
-import { RabbitMQService } from './services/RabbitMQService';
+import { MasterService } from './services/masterService';
+import { WorkerService } from './services/workerService';
+import { FileGenerator, LocalStorageStrategy, S3StorageStrategy } from './services/fileGeneratorService';
+import { JobService } from './services/jobService';
+import { TaskService } from './services/taskService';
+import { RabbitMQService } from './services/rabbitMQService';
 
 const cors = require('cors');
 

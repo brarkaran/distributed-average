@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Job, JobStatus } from '../models/Job';
-import { IJobService } from '../interfaces/IJobService';
+import { Job, JobStatus } from '../models/job';
+import { IJobService } from '../interfaces/jobService';
 
-export class JobService implements IJobService{
+export class JobService implements IJobService {
     private jobs: Map<string, Job>;
 
     constructor() {

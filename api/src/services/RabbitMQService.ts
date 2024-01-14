@@ -1,5 +1,5 @@
 // src/services/QueueService.ts
-import { IQueueService } from '../interfaces/IQueueService';
+import { IQueueService } from '../interfaces/queueService';
 import amqp from 'amqplib';
 
 export class RabbitMQService implements IQueueService {

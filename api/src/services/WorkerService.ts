@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Worker, WorkerStatus } from '../models/Worker';
-import { IWorkerService } from '../interfaces/IWorkerService';
+import { Worker, WorkerStatus } from '../models/worker';
+import { IWorkerService } from '../interfaces/workerService';
 
 // this probably should implement an interface since this is launching workers on kubernetes
 export class WorkerService implements IWorkerService {

@@ -1,5 +1,5 @@
 import express from "express";
-import { MasterService } from "../services/MasterService";
+import { MasterService } from "../services/masterService";
 
 module.exports = (masterService: MasterService) => {
     const router = express.Router();

@@ -1,10 +1,10 @@
-import { IJobService } from "../interfaces/IJobService";
-import { ITaskService } from "../interfaces/ITaskService";
-import { IWorkerService } from "../interfaces/IWorkerService";
-import { IQueueService } from "../interfaces/IQueueService";
+import { IJobService } from "../interfaces/jobService";
+import { ITaskService } from "../interfaces/taskService";
+import { IWorkerService } from "../interfaces/workerService";
+import { IQueueService } from "../interfaces/queueService";
 import { partitionArray } from "../utils/utils";
-import { TaskStatus } from "../models/Task";
-import { JobStatus } from "../models/Job";
+import { TaskStatus } from "../models/task";
+import { JobStatus } from "../models/job";
 
 // TODO: Need some kind of job scheduler to handler worker failures
 // TODO: Need metrics for job scheduler

@@ -1,5 +1,5 @@
 import express from "express";
-import { IWorkerService } from "../interfaces/IWorkerService";
+import { IWorkerService } from "../interfaces/workerService";
 
 module.exports = (workerService: IWorkerService) => {
     const router = express.Router();
