@@ -43,10 +43,11 @@ services:
     #     retries: 5
 
   api:
-    image: api
-    build: 
-      context: ./api
-      dockerfile: Dockerfile
+    # image: api
+    image: neoatom/api:latest
+    # build: 
+    #   context: ./api
+    #   dockerfile: Dockerfile
     env_file:
       - ./api/.env
     
@@ -56,10 +57,10 @@ services:
     restart: "always"
 
   workers:
-    image: workers
-    build: 
-      context: ./workers
-      dockerfile: Dockerfile-workers
+    image: neoatom/workers:latest
+    # build: 
+    #   context: ./workers
+    #   dockerfile: Dockerfile
     deploy:
       mode: replicated
       replicas: 5 # number of workers for testing

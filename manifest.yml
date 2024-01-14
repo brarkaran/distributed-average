@@ -15,6 +15,17 @@ spec:
       containers:
         - name: rabbit
           image: rabbitmq:3.8.5-management
+          # env:
+          #   - name: RABBITMQ_DEFAULT_USER
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: rabbit-secret
+          #         key: RABBITMQ_DEFAULT_USER
+          #   - name: RABBITMQ_DEFAULT_PASS
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: rabbit-secret
+          #         key: RABBITMQ_DEFAULT_PASS
           ports:
             - containerPort: 5672
             - containerPort: 15672
@@ -143,8 +154,6 @@ metadata:
   name: api-ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
     - host: api.ephemeron.io
@@ -158,14 +167,17 @@ spec:
                 port:
                   number: 8000
 
-    - host: distributed.ephemeron.io
+    - host: queue.ephemeron.io
       http:
         paths:
-          - path: /queue-management(/|$)(.*)
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: rabbit
                 port:
                   number: 15672
+
+
+
 

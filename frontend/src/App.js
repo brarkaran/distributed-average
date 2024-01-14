@@ -1,63 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Row, Col, Card, Form, Button, Table, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'; // Custom CSS file
 
-
 function App() {
-  const [selectedFile, setSelectedFile] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [numberOfFiles, setNumberOfFiles] = useState('');
   const [countPerFile, setCountPerFile] = useState('');
+  const [isGeneratingFiles, setIsGeneratingFiles] = useState(false);
+  const [isSubmittingJob, setIsSubmittingJob] = useState(false);
+  const [jobSubmissionStatus, setJobSubmissionStatus] = useState('');
   const handleModalOpen = () => setShowModal(true);
   const handleModalClose = () => setShowModal(false);
 
+  // Refactored fetchJobs function to call independently
+  const fetchJobs = async () => {
+    try {
+      const response = await axios.get('http://api.ephemeron.io/job');
+      setJobs(response.data);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
+  };
 
   useEffect(() => {
-    // Fetch jobs initially and at regular intervals
-    const fetchJobs = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/jobs');
-        setJobs(response.data);
-      } catch (error) {
-        console.error('Error fetching jobs:', error);
-      }
-    };
-
     fetchJobs(); // Fetch immediately on component mount
-    const interval = setInterval(fetchJobs, 6000); // Fetch every 60 seconds
-
+    const interval = setInterval(fetchJobs, 60000); // Fetch every 60 seconds
     return () => clearInterval(interval); // Clear interval on component unmount
   }, []);
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
+    handleModalClose(); // Close the job submission modal
 
-    if (!selectedFile) {
-      alert('Please select a file.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
+    setIsGeneratingFiles(true);
+    setJobSubmissionStatus('');
 
     try {
-      await axios.post('your-backend-upload-endpoint', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const files = await axios.post('http://api.ephemeron.io/files', {
+        numFiles: numberOfFiles,
+        numPerFile: countPerFile,
       });
-      // Optionally, fetch jobs again to update the list
+      setIsGeneratingFiles(false);
+      setIsSubmittingJob(true);
+
+      await axios.post('http://api.ephemeron.io/job', {
+        input: files.data.files,
+      });
+      setIsSubmittingJob(false);
+      setJobSubmissionStatus('Job Submitted Successfully');
+
+      // Refresh the jobs data table
+      await fetchJobs();
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error:', error);
+      setIsGeneratingFiles(false);
+      setIsSubmittingJob(false);
+      setJobSubmissionStatus('Failed to submit job');
     }
   };
+
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -65,71 +69,80 @@ function App() {
   };
 
   return (
-    <Container className="mt-5">
-      <Row>
-        <Col md={{ span: 6, offset: 3 }}>
-          <Card className="text-center">
-            <Card.Header as="h5">Job Submission</Card.Header>
-            <Card.Body>
-              <Button variant="primary" onClick={handleModalOpen}>
-                Submit Job
-              </Button>
+    <div>
+      {/* Right-aligned link to Queue Management */}
+      <div className="text-right mt-3 mr-3">
+        <a href="http://queue.ephemeron.io/" target="_blank" rel="noopener noreferrer">
+          RabbitMQ Queue Management
+        </a>
+      </div>
+      <Container className="mt-5">
+        <Row>
+          <Col md={{ span: 6, offset: 3 }}>
+            <Card className="text-center">
+              <Card.Header as="h5">Job Submission</Card.Header>
+              <Card.Body>
+                <Button variant="primary" onClick={handleModalOpen}>
+                  Submit Job
+                </Button>
 
-              <JobSubmissionModal
-                show={showModal}
-                handleClose={handleModalClose}
-                handleFileChange={handleFileChange}
-                handleNumberChange={(e) => setNumberOfFiles(e.target.value)}
-                handleCountChange={(e) => setCountPerFile(e.target.value)}
-                handleSubmit={handleSubmit}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                <JobSubmissionModal
+                  show={showModal}
+                  handleClose={handleModalClose}
+                  handleNumberChange={(e) => setNumberOfFiles(e.target.value)}
+                  handleCountChange={(e) => setCountPerFile(e.target.value)}
+                  handleSubmit={handleSubmit}
+                />
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-      <Row className="mt-4">
-        <Col>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Status</th>
-                <th>Start Time</th>
-                <th>Update Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map(job => (
-                <tr key={job.id}>
-                  <td>{job.id}</td>
-                  <td>{job.status}</td>
-                  <td>{formatDate(job.createdAt)}</td>
-                  <td>{formatDate(job.updatedAt)}</td>
+        <Row className="mt-4">
+          <Col>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th>Start Time</th>
+                  <th>End Time</th>
+                  <th>Total Duration (seconds)</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Col>
-      </Row>
-    </Container>
+              </thead>
+              <tbody>
+                {jobs.map(job => (
+                  <tr key={job.id}>
+                    <td>{job.id}</td>
+                    <td>{job.status}</td>
+                    <td>{formatDate(job.startTime)}</td>
+                    <td>{job.endTime ? formatDate(job.endTime) : ""}</td>
+                    <td>{job.duration ? job.duration / 1000 : ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Col>
+        </Row>
+
+        <SpinningStatusModal
+          isGenerating={isGeneratingFiles}
+          isSubmitting={isSubmittingJob}
+        />
+      </Container>
+    </div>
   );
 }
 
 export default App;
 
-
-const JobSubmissionModal = ({ show, handleClose, handleFileChange, handleNumberChange, handleCountChange, handleSubmit, numberOfFiles, countPerFile }) => (
+const JobSubmissionModal = ({ show, handleClose, handleNumberChange, handleCountChange, handleSubmit, numberOfFiles, countPerFile }) => (
   <Modal show={show} onHide={handleClose}>
     <Modal.Header closeButton>
       <Modal.Title>Submit Job</Modal.Title>
     </Modal.Header>
     <Modal.Body>
-      <Form>
-        <Form.Group>
-          <Form.Label>Upload File</Form.Label>
-          <Form.Control type="file" onChange={handleFileChange} />
-        </Form.Group>
+      <Form onSubmit={handleSubmit}>
         <Form.Group>
           <Form.Label>Number of Files</Form.Label>
           <Form.Control type="number" value={numberOfFiles} onChange={handleNumberChange} />
@@ -138,10 +151,30 @@ const JobSubmissionModal = ({ show, handleClose, handleFileChange, handleNumberC
           <Form.Label>Count per File</Form.Label>
           <Form.Control type="number" value={countPerFile} onChange={handleCountChange} />
         </Form.Group>
-        <Button variant="primary" type="submit" onClick={handleSubmit}>
+        <Button variant="primary" type="submit">
           Submit
         </Button>
       </Form>
     </Modal.Body>
   </Modal>
 );
+
+const SpinningStatusModal = ({ isGenerating, isSubmitting }) => {
+  let message = '';
+  if (isGenerating) {
+    message = "Generating files, please wait...";
+  } else if (isSubmitting) {
+    message = "Submitting job, please wait...";
+  }
+
+  return (
+    <Modal show={isGenerating || isSubmitting} onHide={() => { }}>
+      <Modal.Body>
+        <div className="text-center">
+          <Spinner animation="border" />
+          <p className="mt-3">{message}</p>
+        </div>
+      </Modal.Body>
+    </Modal>
+  );
+};

@@ -13,7 +13,7 @@ module.exports = (fileGenerator: FileGenerator) => {
         }
         const files = await fileGenerator.generateFiles(numFiles, numPerFile);
         console.log(files)
-        res.status(200).json(files);
+        res.status(200).json({ files });
     });
     return router;
 };
