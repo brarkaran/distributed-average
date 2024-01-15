@@ -78,7 +78,7 @@ const createPod = async (podId: string) => {
     const podManifest = {
         apiVersion: 'v1',
         kind: 'Pod',
-        metadata: { name: `worker-${podId}` },
+        metadata: { name: `worker-${podId}`, labels: { role: "worker" } },
         spec: {
             containers: [{
                 name: 'workers',
