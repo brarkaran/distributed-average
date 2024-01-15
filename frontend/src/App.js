@@ -3,8 +3,9 @@ import axios from 'axios';
 import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import { Chart } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import 'chartjs-adapter-moment';
+
 
 function WorkerManagement({ onInitialize, onDeactivate }) {
   const [numWorkers, setNumWorkers] = useState('');
@@ -18,7 +19,7 @@ function WorkerManagement({ onInitialize, onDeactivate }) {
   };
 
   return (
-    <Card className="text-center mt-4">
+    <Card className="text-center component-style">
       <Card.Header as="h5">Worker Management</Card.Header>
       <Card.Body>
         <Form inline className="justify-content-center mb-3">
@@ -84,26 +85,38 @@ function App() {
     try {
       const response = await axios.get('https://api.ephemeron.io/workers');
       const newData = response.data;
-      const timestamp = new Date().toISOString();
-
-      const { idleCount, busyCount } = newData.workers.reduce((acc, worker) => {
-        acc[worker.status === 'IDLE' ? 'idleCount' : 'busyCount']++;
-        return acc;
-      }, { idleCount: 0, busyCount: 0 });
-
-      setWorkersData(prevData => {
-        const newIdle = [...prevData.idle, { time: timestamp, count: idleCount }].slice(-50);
-        const newBusy = [...prevData.busy, { time: timestamp, count: busyCount }].slice(-50);
-
-        return {
-          idle: newIdle,
-          busy: newBusy,
-        };
-      });
+      setWorkersData(prevData => ({
+        idle: [...prevData.idle, newData.idle],
+        busy: [...prevData.busy, newData.busy],
+      }));
     } catch (error) {
       console.error('Error fetching workers data:', error);
     }
   };
+
+  // const fetchWorkersData = async () => {
+  //   try {
+  //     const response = await axios.get('https://api.ephemeron.io/workers');
+  //     const newData = response.data;
+
+  //     const { idleCount, busyCount } = newData.workers.reduce((acc, worker) => {
+  //       acc[worker.status === 'IDLE' ? 'idleCount' : 'busyCount']++;
+  //       return acc;
+  //     }, { idleCount: 0, busyCount: 0 });
+
+  //     setWorkersData(prevData => {
+  //       const newIdle = [...prevData.idle, idleCount].slice(-50);
+  //       const newBusy = [...prevData.busy, busyCount].slice(-50);
+
+  //       return {
+  //         idle: newIdle,
+  //         busy: newBusy,
+  //       };
+  //     });
+  //   } catch (error) {
+  //     console.error('Error fetching workers data:', error);
+  //   }
+  // };
 
   const fetchJobs = async () => {
     try {
@@ -125,54 +138,72 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const chartOptions = {
-    animation: {
-      duration: 0, // general animation time
-    },
-    hover: {
-      animationDuration: 0, // duration of animations when hovering an item
-    },
-    responsiveAnimationDuration: 0, // animation duration after a resize
-    elements: {
-      line: {
-        tension: 0.5 // disables bezier curves
-      },
-      point: {
-        radius: 0 // hide points
-      }
-    },
-    scales: {
-      x: {
-        type: 'time',
-        time: {
-          unit: 'second',
-          displayFormats: {
-            minute: 'hh:mm:ss a'
-          },
-          tooltipFormat: 'hh:mm:ss a'
-        }
-      }
-    },
-  };
+  // const chartOptions = {
+  //   animation: {
+  //     duration: 0, // general animation time
+  //   },
+  //   hover: {
+  //     animationDuration: 0, // duration of animations when hovering an item
+  //   },
+  //   responsiveAnimationDuration: 0, // animation duration after a resize
+  //   elements: {
+  //     line: {
+  //       tension: 0.5 // disables bezier curves
+  //     },
+  //     point: {
+  //       radius: 0 // hide points
+  //     }
+  //   },
+  //   // scales: {
+  //   //   x: {
+  //   //     type: 'time',
+  //   //     time: {
+  //   //       unit: 'second',
+  //   //       displayFormats: {
+  //   //         minute: 'hh:mm:ss a'
+  //   //       },
+  //   //       tooltipFormat: 'hh:mm:ss a'
+  //   //     }
+  //   //   }
+  //   // },
+  // };
+  // const chartData = {
+  //   labels: workersData.idle.map((_, index) => index),
+  //   datasets: [
+  //     {
+  //       label: 'Idle Workers',
+  //       data: workersData.idle,
+  //       backgroundColor: "#c2f970",
+  //       borderColor: "#c2f970"
+  //     },
+  //     {
+  //       label: 'Busy Workers',
+  //       data: workersData.busy,
+  //       backgroundColor: "#af4154",
+  //       borderColor: "#af4154"
+  //     },
+  //   ],
+  // };
+
   const chartData = {
-    labels: workersData.idle.map(dataPoint => dataPoint.time),
+    labels: workersData.idle.map((_, index) => index),
     datasets: [
       {
         label: 'Idle Workers',
-        data: workersData.idle.map(dataPoint => dataPoint.count),
-        backgroundColor: "#c2f970",
-        borderColor: "#c2f970"
+        data: workersData.idle,
+        fill: false,
+        backgroundColor: 'rgb(255, 99, 132)',
+        borderColor: 'rgba(255, 99, 132, 0.2)',
       },
       {
         label: 'Busy Workers',
-        data: workersData.busy.map(dataPoint => dataPoint.count),
-        backgroundColor: "#af4154",
-        borderColor: "#af4154"
+        data: workersData.busy,
+        fill: false,
+        backgroundColor: 'rgb(54, 162, 235)',
+        borderColor: 'rgba(54, 162, 235, 0.2)',
       },
     ],
   };
-
-
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -222,14 +253,14 @@ function App() {
           onInitialize={handleInitializeWorkers}
           onDeactivate={handleDeactivateWorkers}
         />
-        <Row className="mt-4">
+        {/* <Row className="mt-4">
           <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
-            <Line data={chartData} options={chartOptions} />
+            <Line data={chartData} />
           </Col>
-        </Row>
+        </Row> */}
       </Container>
 
-      <Container className="mt-5">
+      <Container className="text-center component-style">
         <Row>
           <Col md={{ span: 6, offset: 3 }}>
             <Card className="text-center">
