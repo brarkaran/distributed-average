@@ -17,7 +17,8 @@ export class WorkerService implements IWorkerService {
     async init(numWorkers: number): Promise<Worker[]> {
         this.numWorkers = numWorkers;
         const workerIds = Array.from({ length: numWorkers }, () => uuidv4());
-        await Promise.all(workerIds.map(async (workerId) => createPod(workerId)));
+        // randomly select one worker to simulate slow processing
+        await Promise.all(workerIds.map(async (workerId, index) => createPod(workerId, index === Math.floor(Math.random() * numWorkers))));
         console.log(`Created ${workerIds.length} workers`);
         workerIds.forEach((workerId) => {
             this.workers.set(workerId, {
@@ -51,7 +52,7 @@ export class WorkerService implements IWorkerService {
     }
 }
 
-const createPod = async (podId: string) => {
+const createPod = async (podId: string, simulateSlow: boolean) => {
     const podManifest = {
         apiVersion: 'v1',
         kind: 'Pod',
@@ -62,6 +63,7 @@ const createPod = async (podId: string) => {
                 image: 'neoatom/workers:latest',
                 env: [
                     { name: 'WORKER_ID', value: podId },
+                    { name: 'AM_I_SLOW', value: simulateSlow.toString() },
                     {
                         name: 'API_HOST',
                         value: 'http://api:8000'

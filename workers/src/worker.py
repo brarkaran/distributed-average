@@ -5,6 +5,7 @@ import pika
 import requests
 import numpy as np
 import io
+import time
 import boto3
 from requests.adapters import HTTPAdapter, Retry
 from abc import ABC, abstractmethod
@@ -51,10 +52,11 @@ class S3FileHandler(FileHandlerInterface):
             raise IOError(f"Error downloading {object_name}: {e}")
 
 class TaskWorker:
-    def __init__(self, file_handler, queue_name, worker_id):
+    def __init__(self, file_handler, queue_name, worker_id, simulate_slow=False):
         self.file_handler = file_handler
         self.queue_name = queue_name
         self.worker_id = worker_id
+        self.simulate_slow = simulate_slow
 
     def worker_service_notification(self, status):
         try:
@@ -128,6 +130,9 @@ class TaskWorker:
         try:
             task = json.loads(body)
             self.worker_service_notification("BUSY")
+            if self.simulate_slow:
+                logging.info("Simulating slow worker...")
+                time.sleep(10)
             self.process_task(task)
             ch.basic_ack(delivery_tag=method.delivery_tag)
             self.worker_service_notification("IDLE")
@@ -149,7 +154,8 @@ def main():
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'), 
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
     )
-    worker = TaskWorker(file_handler, 'worker-queue', os.getenv('WORKER_ID'))
+    am_i_slow = os.getenv('AM_I_SLOW', 'false').lower() == 'true'
+    worker = TaskWorker(file_handler, 'worker-queue', os.getenv('WORKER_ID'), simulate_slow=am_i_slow)
     worker.start(os.getenv('RABBITMQ_HOST', 'rabbit'))
 
 if __name__ == '__main__':
