@@ -4,7 +4,7 @@
 
 This project designs and implements a distributed system to process large computational jobs across a fleet of workers. The primary task is to compute the mean of every index across multiple files, each containing a set of random numbers.
 
-Checkout the deployed version: [Distributed Sum](https://distributed.ephemeron.io)
+Checkout the deployed version: [Distributed Average](https://distributed.ephemeron.io)
 
 ## Features
 
