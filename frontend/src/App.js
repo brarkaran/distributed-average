@@ -260,26 +260,6 @@ function App() {
   //   ],
   // };
 
-  const chartData = {
-    labels: workersData.idle.map((_, index) => index),
-    datasets: [
-      {
-        label: 'Idle Workers',
-        data: workersData.idle,
-        fill: false,
-        backgroundColor: 'rgb(255, 99, 132)',
-        borderColor: 'rgba(255, 99, 132, 0.2)',
-      },
-      {
-        label: 'Busy Workers',
-        data: workersData.busy,
-        fill: false,
-        backgroundColor: 'rgb(54, 162, 235)',
-        borderColor: 'rgba(54, 162, 235, 0.2)',
-      },
-    ],
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     handleModalClose();
@@ -336,9 +316,9 @@ function App() {
             <Line data={chartData} />
           </Col>
         </Row> */}
-      </Container>
+        {/* </Container>
 
-      <Container className="mt-5">
+      <Container className="mt-5"> */}
         <Row>
           <Col md={{ span: 6, offset: 3 }}>
             <Card className="text-center">
