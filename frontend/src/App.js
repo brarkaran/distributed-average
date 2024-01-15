@@ -3,6 +3,9 @@ import axios from 'axios';
 import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS } from 'chart.js/auto';
+import 'chartjs-adapter-moment';
 
 function App() {
   const [jobs, setJobs] = useState([]);
@@ -12,8 +15,35 @@ function App() {
   const [isGeneratingFiles, setIsGeneratingFiles] = useState(false);
   const [isSubmittingJob, setIsSubmittingJob] = useState(false);
   const [jobSubmissionStatus, setJobSubmissionStatus] = useState('');
+  const [workersData, setWorkersData] = useState({ idle: [], busy: [] });
+
   const handleModalOpen = () => setShowModal(true);
   const handleModalClose = () => setShowModal(false);
+
+  const fetchWorkersData = async () => {
+    try {
+      const response = await axios.get('https://api.ephemeron.io/workers');
+      const newData = response.data;
+      const timestamp = new Date().toISOString(); // Current timestamp
+
+      const { idleCount, busyCount } = newData.workers.reduce((acc, worker) => {
+        acc[worker.status === 'IDLE' ? 'idleCount' : 'busyCount']++;
+        return acc;
+      }, { idleCount: 0, busyCount: 0 });
+
+      setWorkersData(prevData => {
+        const newIdle = [...prevData.idle, { time: timestamp, count: idleCount }].slice(-50);
+        const newBusy = [...prevData.busy, { time: timestamp, count: busyCount }].slice(-50);
+
+        return {
+          idle: newIdle,
+          busy: newBusy,
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching workers data:', error);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -25,10 +55,65 @@ function App() {
   };
 
   useEffect(() => {
-    fetchJobs();
-    const interval = setInterval(fetchJobs, 60000);
+    const interval = setInterval(fetchWorkersData, 500);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    fetchJobs();
+    const interval = setInterval(fetchJobs, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const chartOptions = {
+    animation: {
+      duration: 0, // general animation time
+    },
+    hover: {
+      animationDuration: 0, // duration of animations when hovering an item
+    },
+    responsiveAnimationDuration: 0, // animation duration after a resize
+    elements: {
+      line: {
+        tension: 0.5 // disables bezier curves
+      },
+      point: {
+        radius: 0 // hide points
+      }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'second',
+          displayFormats: {
+            minute: 'hh:mm:ss a'
+          },
+          tooltipFormat: 'hh:mm:ss a'
+        }
+      }
+    },
+    // ... other options
+  };
+  const chartData = {
+    labels: workersData.idle.map(dataPoint => dataPoint.time),
+    datasets: [
+      {
+        label: 'Idle Workers',
+        data: workersData.idle.map(dataPoint => dataPoint.count),
+        backgroundColor: "#c2f970",
+        borderColor: "#c2f970"
+      },
+      {
+        label: 'Busy Workers',
+        data: workersData.busy.map(dataPoint => dataPoint.count),
+        backgroundColor: "#af4154",
+        borderColor: "#af4154"
+      },
+    ],
+  };
+
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -105,6 +190,7 @@ function App() {
                   <th>Start Time</th>
                   <th>End Time</th>
                   <th>Total Duration (seconds)</th>
+                  <th>Result</th>
                 </tr>
               </thead>
               <tbody>
@@ -115,6 +201,7 @@ function App() {
                     <td>{formatDate(job.startTime)}</td>
                     <td>{job.endTime ? formatDate(job.endTime) : ""}</td>
                     <td>{job.duration ? job.duration / 1000 : ""}</td>
+                    <td>{job.output ? job.output[0] : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -127,6 +214,11 @@ function App() {
           isSubmitting={isSubmittingJob}
         />
       </Container>
+      <Row className="mt-4">
+        <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
+          <Line data={chartData} options={chartOptions} />
+        </Col>
+      </Row>
     </div>
   );
 }
