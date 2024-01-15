@@ -16,7 +16,7 @@ export class WorkerService implements IWorkerService {
     };
     async init(numWorkers: number): Promise<Worker[]> {
         this.numWorkers = numWorkers;
-        const workerIds = Array.from({ length: 10 }, () => uuidv4());
+        const workerIds = Array.from({ length: numWorkers }, () => uuidv4());
         await Promise.all(workerIds.map(async (workerId) => createPod(workerId)));
         console.log(`Created ${workerIds.length} workers`);
         workerIds.forEach((workerId) => {
