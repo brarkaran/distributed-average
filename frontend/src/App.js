@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './App.css'; // Custom CSS file
+import './App.css';
 
 function App() {
   const [jobs, setJobs] = useState([]);
@@ -15,7 +15,6 @@ function App() {
   const handleModalOpen = () => setShowModal(true);
   const handleModalClose = () => setShowModal(false);
 
-  // Refactored fetchJobs function to call independently
   const fetchJobs = async () => {
     try {
       const response = await axios.get('https://api.ephemeron.io/job');
@@ -26,14 +25,14 @@ function App() {
   };
 
   useEffect(() => {
-    fetchJobs(); // Fetch immediately on component mount
-    const interval = setInterval(fetchJobs, 60000); // Fetch every 60 seconds
-    return () => clearInterval(interval); // Clear interval on component unmount
+    fetchJobs();
+    const interval = setInterval(fetchJobs, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    handleModalClose(); // Close the job submission modal
+    handleModalClose();
 
     setIsGeneratingFiles(true);
     setJobSubmissionStatus('');
@@ -52,7 +51,6 @@ function App() {
       setIsSubmittingJob(false);
       setJobSubmissionStatus('Job Submitted Successfully');
 
-      // Refresh the jobs data table
       await fetchJobs();
     } catch (error) {
       console.error('Error:', error);
@@ -70,7 +68,6 @@ function App() {
 
   return (
     <div>
-      {/* Right-aligned link to Queue Management */}
       <div className="text-right mt-3 mr-3">
         <a href="https://queue.ephemeron.io/" target="_blank" rel="noopener noreferrer">
           RabbitMQ Queue Management

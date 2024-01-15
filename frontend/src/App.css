@@ -1,7 +1,7 @@
 /* Overall background and color scheme */
 body {
   background-color: #1E1E1E;
-  color: #D4D4D4;
+  color: #2d2020;
   font-family: 'Roboto', 'Arial', sans-serif;
 }
 
@@ -52,7 +52,7 @@ body {
 
 .table th,
 .table td {
-  color: #D4D4D4;
+  color: #000000;
 }
 
 .table thead th {
@@ -65,7 +65,7 @@ body {
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
-  background-color: #2B2B2B;
+  background-color: #260e0e;
 }
 
 .table-striped tbody tr:nth-of-type(even) {
