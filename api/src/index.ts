@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { KubeConfig, BatchV1Api, V1Job, V1alpha1ValidatingAdmissionPolicyBindingSpec } from '@kubernetes/client-node';
 import bodyParser from 'body-parser'
 import { MasterService } from './services/masterService';
 import { WorkerService } from './services/workerService';
@@ -15,9 +14,9 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config('../.env');
 }
 
-const WORKER_QUEUE = process.env.worker_queue || 'worker-queue';
-const OUTPUT_QUEUE = process.env.output_queue || 'output-queue';
-const RABBIT_HOST = process.env.RABBIT_HOST!;
+const WORKER_QUEUE = process.env.WORKER_QUEUE || 'worker-queue';
+const OUTPUT_QUEUE = process.env.OUTPUT_QUEUE || 'output-queue';
+const RABBIT_HOST = process.env.RABBIT_HOST || 'localhost';
 
 const queueService = new RabbitMQService(RABBIT_HOST);
 const workerService = new WorkerService();

@@ -17,7 +17,7 @@ fn create_files_and_sum_numbers_vectorized(num_files: usize, count: usize) -> Ve
     let between = Uniform::from(0.0..1.0);
 
     let numbers: Vec<_> = (0..num_files).into_par_iter().map(|i| {
-        let mut rng = StdRng::from_entropy(); // Create a new RNG for each thread
+        let mut rng = StdRng::from_entropy(); 
         let mut row = Vec::with_capacity(count);
         for _ in 0..count {
             row.push(between.sample(&mut rng));

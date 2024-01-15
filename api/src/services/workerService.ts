@@ -49,29 +49,6 @@ export class WorkerService implements IWorkerService {
     getWorkers(): Worker[] {
         return [...this.workers.values()];
     }
-
-
-    // getIdleWorkers(): Worker[] {
-    //     return [...this.workers.values()].filter(worker => worker.status === WorkerStatus.IDLE);
-    // }
-    // getWorkers(): Worker[] {
-    //     return [...this.workers.values()];
-    // }
-    // getBusyWorkers(): Worker[] {
-    //     return [...this.workers.values()].filter(worker => worker.status === WorkerStatus.BUSY);
-    // }
-    // getNumWorkers(): number {
-    //     return this.numWorkers;
-    // }
-    // updateWorkerStatus(workerId: string, status: WorkerStatus): Worker | null {
-    //     const worker = this.workers.get(workerId);
-    //     if (!worker) {
-    //         return null;
-    //     }
-    //     const updatedWorker = { ...worker, status: status };
-    //     this.workers.set(workerId, updatedWorker);
-    //     return updatedWorker;
-    // }
 }
 
 const createPod = async (podId: string) => {
@@ -96,7 +73,7 @@ const createPod = async (podId: string) => {
                         value: 'us-east-1'
                     }, {
                         name: 'AWS_BUCKET_NAME',
-                        value: 'codebucker'
+                        value: process.env.AWS_BUCKET_NAME!
                     }, {
                         name: 'AWS_ACCESS_KEY_ID',
                         valueFrom: {
