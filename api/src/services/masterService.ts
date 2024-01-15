@@ -3,11 +3,11 @@ import { ITaskService } from "../interfaces/taskService";
 import { IWorkerService } from "../interfaces/workerService";
 import { IQueueService } from "../interfaces/queueService";
 import { partitionArray, processCsvFile } from "../utils/utils";
-import { TaskStatus } from "../models/task";
+import { Task, TaskStatus } from "../models/task";
 import { JobStatus } from "../models/job";
 
-// TODO: Need some kind of job scheduler to handler worker failures
-// TODO: Need metrics for job scheduler
+// we are assuming we are always making progress here, the metrics have to be different if we want to handle major failures
+const RESCHEDULING_COMPLETION_THRESHOLD = 0.75; // only think about rescheduling tasks for jobs that are 75% complete
 
 export class MasterService {
     private jobService: IJobService;
@@ -19,6 +19,10 @@ export class MasterService {
     private taskPartitionSize: number = 5;
     private retryInterval: number = 1000;
 
+    // map job id to object which tracks total duration across completed tasks and number of completed tasks to keep a running average,
+    // this is used in our scheduling stragegy to determine which task needs rescheduling
+    private metrics = new Map<string, { totalCompletedDuration: number, totalCompleted: number }>();
+
     constructor(jobService: IJobService, taskService: ITaskService, workerService: IWorkerService, queueService: IQueueService, outputQueue: string, workerQueue: string, taskPartitionSize?: number) {
         this.jobService = jobService;
         this.taskService = taskService;
@@ -27,6 +31,7 @@ export class MasterService {
         this.outputQueue = outputQueue;
         this.workerQueue = workerQueue;
         this.taskPartitionSize = taskPartitionSize ? taskPartitionSize : this.taskPartitionSize;
+        this.startMonitoring();
     }
 
     async scheduleJob(input: string[]) {
@@ -66,10 +71,19 @@ export class MasterService {
             console.warn(`Job ${jobId} does not exist this is likely a bug`);
             return null;
         }
-        if (!this.taskService.finishTask(taskId, output)) {
+        const task = this.taskService.finishTask(taskId, output)
+        if (!task) {
             console.warn(`Task ${taskId} does not exist or is already completed`);
             return null;
         }
+        // update metrics
+        let metrics = this.metrics.get(jobId);
+        if (!metrics) {
+            metrics = { totalCompletedDuration: 0, totalCompleted: 0 };
+            this.metrics.set(jobId, metrics);
+        }
+        metrics.totalCompletedDuration += task.duration!;
+        metrics.totalCompleted++;
         // check if job is complete
         // TODO: this should be part of the task service
         const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
@@ -102,18 +116,46 @@ export class MasterService {
         }
     }
 
-    // startMonitoring() {
-    //     setInterval(() => {
-    //         this.checkAndRetryTasks();
-    //     }, this.retryInterval);
-    // }
-
-    // private async checkAndRetryTasks() {
-    //     const tasks = await this.taskService.getTasks();
-    //     tasks.forEach(task => {
-    //         if (this.shouldRetry(task)) {
-    //             this.retryTask(task);
-    //         }
-    //     });
-    // }
+    getLongRunningTasks(): Task[] {
+        const potentialTasks: Task[] = [];
+        // get incomplete jobs
+        const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
+        // get incomplete tasks for those jobs
+        const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED));
+        incompleteTasks.forEach(task => {
+            const metrics = this.metrics.get(task.jobId);
+            // only reschedule tasks for jobs that are almost complete
+            // total tasks will be close to this number
+            const totalTasks = (this.jobService.getJob(task.jobId)!.input.length - 1) / (this.taskPartitionSize - 1)
+            if (!metrics || metrics.totalCompleted < RESCHEDULING_COMPLETION_THRESHOLD * totalTasks) {
+                return [];
+            }
+            // if current task is taking longer than average, reschedule it
+            if (1.5 * (new Date().getTime() - task.startTime!) > metrics!.totalCompletedDuration / metrics!.totalCompleted) {
+                potentialTasks.push(task);
+            }
+        }
+        );
+        return potentialTasks;
+    }
+    async retryTasks(tasks: Task[]) {
+        console.log(`Retrying ${tasks.length} tasks`);
+        tasks.forEach(task => {
+            this.taskService.updateTask(task.id, { status: TaskStatus.PENDING });
+        });
+        await this.queueService.sendMessages(this.workerQueue, tasks);
+    }
+    startMonitoring() {
+        setInterval(() => {
+            console.log("Monitoring long running tasks");
+            const longRunningTasks = this.getLongRunningTasks();
+            console.log(`Found ${longRunningTasks.length} long running tasks`);
+            if (longRunningTasks.length > 0) {
+                console.log(`Retrying ${longRunningTasks} tasks`);
+                this.retryTasks(longRunningTasks);
+            } else {
+                console.log(`No long running tasks found`);
+            }
+        }, this.retryInterval);
+    }
 }

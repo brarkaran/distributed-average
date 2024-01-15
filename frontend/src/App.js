@@ -4,7 +4,6 @@ import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from '
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS } from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 
 function WorkerManagement({ onInitialize, onDeactivate }) {
@@ -85,7 +84,7 @@ function App() {
     try {
       const response = await axios.get('https://api.ephemeron.io/workers');
       const newData = response.data;
-      const timestamp = new Date().toISOString(); // Current timestamp
+      const timestamp = new Date().toISOString();
 
       const { idleCount, busyCount } = newData.workers.reduce((acc, worker) => {
         acc[worker.status === 'IDLE' ? 'idleCount' : 'busyCount']++;
@@ -154,7 +153,6 @@ function App() {
         }
       }
     },
-    // ... other options
   };
   const chartData = {
     labels: workersData.idle.map(dataPoint => dataPoint.time),

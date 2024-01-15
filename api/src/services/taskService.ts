@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Task, TaskStatus } from '../models/task';
+import { ITaskService } from '../interfaces/taskService';
 
 
-export class TaskService {
+export class TaskService implements ITaskService {
     private tasks: Map<string, Task>;
 
     constructor() {
@@ -18,6 +19,15 @@ export class TaskService {
         this.tasks.set(newTask.id, newTask);
         console.log("Task added: ", newTask)
         return newTask;
+    };
+    updateTask(taskId: string, updatedFields: Partial<Task>): Task | null {
+        const task = this.tasks.get(taskId);
+        if (!task) {
+            return null;
+        }
+        const updatedJob = { ...task, ...updatedFields };
+        this.tasks.set(taskId, updatedJob);
+        return updatedJob;
     };
     startTask(taskId: string): Task | null {
         const task = this.tasks.get(taskId);
@@ -47,6 +57,9 @@ export class TaskService {
     getTasks(): Task[] {
         return [...this.tasks.values()];
     };
+    getTasksForJob(jobId: string): Task[] {
+        return this.getTasks().filter(task => task.jobId === jobId);
+    }
     removeTask(taskId: string): boolean {
         return this.tasks.delete(taskId);
     }

@@ -7,5 +7,7 @@ export interface ITaskService {
     finishTask(taskId: string, output: string[]): Task | null;
     getTask(taskId: string): Task | null;
     getTasks(): Task[]
+    getTasksForJob(jobId: string): Task[];
+    updateTask(taskId: string, updatedFields: Partial<Task>): Task | null;
     removeTask(taskId: string): boolean;
 }
