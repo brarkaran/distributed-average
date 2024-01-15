@@ -1,10 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Container, Row, Col, Card, Form, Button, Table, Modal, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { Chart } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+
+import Chart from 'chart.js/auto';
+import 'chartjs-adapter-date-fns';
+
+function TimeSeriesChart({ workersData }) {
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  useEffect(() => {
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
+    }
+
+    chartInstance.current = new Chart(chartRef.current, {
+      type: 'line',
+      data: {
+        labels: workersData.idle.map(point => point.time),
+        datasets: [
+          {
+            label: 'Idle Workers',
+            data: workersData.idle.map(point => point.value),
+          },
+          {
+            label: 'Busy Workers',
+            data: workersData.busy.map(point => point.value),
+          }
+        ]
+      },
+      options: {
+        animation: {
+          duration: 0, // general animation time
+        },
+        hover: {
+          animationDuration: 0, // duration of animations when hovering an item
+        },
+        responsiveAnimationDuration: 0, // animation duration after a resize
+        elements: {
+          line: {
+            tension: 0.5 // disables bezier curves
+          },
+          point: {
+            radius: 0 // hide points
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'minute',
+              displayFormats: {
+                minute: 'HH:mm'
+              }
+            }
+          },
+        },
+      }
+    });
+  }, [workersData]);
+
+  return <canvas ref={chartRef}></canvas>;
+}
 
 
 function WorkerManagement({ onInitialize, onDeactivate }) {
@@ -85,14 +144,30 @@ function App() {
     try {
       const response = await axios.get('https://api.ephemeron.io/workers');
       const newData = response.data;
-      setWorkersData(prevData => ({
-        idle: [...prevData.idle, newData.idle],
-        busy: [...prevData.busy, newData.busy],
-      }));
+      const currentTime = new Date();
+      const { idleCount, busyCount } = newData.workers.reduce((acc, worker) => {
+        acc[worker.status === 'IDLE' ? 'idleCount' : 'busyCount']++;
+        return acc;
+      }, { idleCount: 0, busyCount: 0 });
+
+      setWorkersData(prevData => {
+        const newIdleData = [...prevData.idle, { time: currentTime, value: idleCount }].slice(-50);
+        const newBusyData = [...prevData.busy, { time: currentTime, value: busyCount }].slice(-50);
+
+        // Prune data older than 5 minutes
+        console.log(JSON.stringify(newIdleData, null, 2));
+        const fiveMinutesAgo = new Date(currentTime.getTime() - 5 * 60000);
+        return {
+          idle: newIdleData.filter(point => point.time >= fiveMinutesAgo),
+          busy: newBusyData.filter(point => point.time >= fiveMinutesAgo),
+        };
+      });
+
     } catch (error) {
       console.error('Error fetching workers data:', error);
     }
   };
+
 
   // const fetchWorkersData = async () => {
   //   try {
@@ -139,21 +214,21 @@ function App() {
   }, []);
 
   // const chartOptions = {
-  //   animation: {
-  //     duration: 0, // general animation time
+  // animation: {
+  //   duration: 0, // general animation time
   //   },
-  //   hover: {
-  //     animationDuration: 0, // duration of animations when hovering an item
+  // hover: {
+  //   animationDuration: 0, // duration of animations when hovering an item
   //   },
-  //   responsiveAnimationDuration: 0, // animation duration after a resize
+  // responsiveAnimationDuration: 0, // animation duration after a resize
   //   elements: {
-  //     line: {
-  //       tension: 0.5 // disables bezier curves
-  //     },
-  //     point: {
-  //       radius: 0 // hide points
-  //     }
+  //   line: {
+  //     tension: 0.5 // disables bezier curves
   //   },
+  //   point: {
+  //     radius: 0 // hide points
+  //   }
+  // },
   //   // scales: {
   //   //   x: {
   //   //     type: 'time',
@@ -253,6 +328,9 @@ function App() {
           onInitialize={handleInitializeWorkers}
           onDeactivate={handleDeactivateWorkers}
         />
+        <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
+          <TimeSeriesChart workersData={workersData} />
+        </Col>
         {/* <Row className="mt-4">
           <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
             <Line data={chartData} />
