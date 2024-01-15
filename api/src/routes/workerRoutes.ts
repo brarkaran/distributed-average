@@ -12,6 +12,10 @@ module.exports = (workerService: IWorkerService) => {
         const result = await workerService.init(numWorkers);
         res.status(200).json({ message: `Initialized ${result.length} workers` });
     });
+    router.post('/workers/deactivate', async (req: any, res: any) => {
+        const result = await workerService.deactivate();
+        res.status(200).json({ message: `Deleted ${result.length} workers` });
+    });
     router.get('/workers', async (req: any, res: any) => {
         const workers = workerService.getWorkers();
         res.status(200).json({ workers });

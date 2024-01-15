@@ -7,6 +7,43 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS } from 'chart.js/auto';
 import 'chartjs-adapter-moment';
 
+function WorkerManagement({ onInitialize, onDeactivate }) {
+  const [numWorkers, setNumWorkers] = useState('');
+
+  const handleInitialize = () => {
+    onInitialize(numWorkers);
+  };
+
+  const handleDeactivate = () => {
+    onDeactivate();
+  };
+
+  return (
+    <Card className="text-center mt-4">
+      <Card.Header as="h5">Worker Management</Card.Header>
+      <Card.Body>
+        <Form inline className="justify-content-center mb-3">
+          <Form.Group>
+            <Form.Label className="mr-2">Number of Workers</Form.Label>
+            <Form.Control
+              type="number"
+              value={numWorkers}
+              onChange={(e) => setNumWorkers(e.target.value)}
+            />
+          </Form.Group>
+          <Button variant="primary" onClick={handleInitialize} className="ml-2">
+            Initialize Workers
+          </Button>
+        </Form>
+        <Button variant="danger" onClick={handleDeactivate}>
+          Deactivate Workers
+        </Button>
+      </Card.Body>
+    </Card>
+  );
+}
+
+
 function App() {
   const [jobs, setJobs] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -19,6 +56,30 @@ function App() {
 
   const handleModalOpen = () => setShowModal(true);
   const handleModalClose = () => setShowModal(false);
+
+  const handleInitializeWorkers = async (num) => {
+    // Call API to initialize workers
+    console.log("Initializing workers with count: ", num);
+    try {
+      const response = await axios.post('https://api.ephemeron.io/workers/initialize', {
+        numWorkers: num,
+      });
+      console.log("Response: ", response);
+    } catch (error) {
+      console.error('Error fetching workers data:', error);
+    }
+  };
+
+  const handleDeactivateWorkers = () => {
+    // Call API to deactivate workers
+    console.log("Deactivating workers");
+    try {
+      const response = axios.post('https://api.ephemeron.io/workers/deactivate');
+      console.log("Response: ", response);
+    } catch (error) {
+      console.error('Error fetching workers data:', error);
+    }
+  };
 
   const fetchWorkersData = async () => {
     try {
@@ -159,6 +220,18 @@ function App() {
         </a>
       </div>
       <Container className="mt-5">
+        <WorkerManagement
+          onInitialize={handleInitializeWorkers}
+          onDeactivate={handleDeactivateWorkers}
+        />
+        <Row className="mt-4">
+          <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
+            <Line data={chartData} options={chartOptions} />
+          </Col>
+        </Row>
+      </Container>
+
+      <Container className="mt-5">
         <Row>
           <Col md={{ span: 6, offset: 3 }}>
             <Card className="text-center">
@@ -179,7 +252,6 @@ function App() {
             </Card>
           </Col>
         </Row>
-
         <Row className="mt-4">
           <Col>
             <Table striped bordered hover responsive>
@@ -214,11 +286,6 @@ function App() {
           isSubmitting={isSubmittingJob}
         />
       </Container>
-      <Row className="mt-4">
-        <Col style={{ maxWidth: '600px', maxHeight: '400px', margin: '0 auto' }}>
-          <Line data={chartData} options={chartOptions} />
-        </Col>
-      </Row>
     </div>
   );
 }

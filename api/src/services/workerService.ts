@@ -5,10 +5,8 @@ import * as k8s from '@kubernetes/client-node';
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
-
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-// this probably should implement an interface since this is launching workers on kubernetes
 export class WorkerService implements IWorkerService {
     private numWorkers: number = 0;
     private workers: Map<string, Worker>;
@@ -27,6 +25,16 @@ export class WorkerService implements IWorkerService {
                 status: WorkerStatus.IDLE
             });
         });
+        return [...this.workers.values()];
+    }
+    async deactivate(): Promise<Worker[]> {
+        const workerIds = [...this.workers.keys()];
+        await Promise.all(workerIds.map(async (workerId) => {
+            await k8sApi.deleteNamespacedPod(`worker-${workerId}`, 'default');
+        }));
+        console.log(`Deleted ${workerIds.length} workers`);
+        this.workers.clear();
+        this.numWorkers = 0;
         return [...this.workers.values()];
     }
     updateWorkerStatus(workerId: string, status: WorkerStatus): Worker | null {

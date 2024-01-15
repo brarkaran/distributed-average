@@ -3,6 +3,7 @@ import { Worker, WorkerStatus } from '../models/worker';
 
 export interface IWorkerService {
     init(numWorkers: number): Promise<Worker[]>;
+    deactivate(): Promise<Worker[]>;
     getWorkers(): Worker[];
     updateWorkerStatus(workerId: string, status: WorkerStatus): Worker | null;
 }
