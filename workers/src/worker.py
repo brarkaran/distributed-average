@@ -286,7 +286,7 @@ class TaskWorker:
 def main():
     time.sleep(5)
     file_processor = S3FileHandler(os.getenv('AWS_BUCKET_NAME', 'codebucker'))
-    worker = TaskWorker(file_processor, 'worker-queue')
+    worker = TaskWorker(file_processor, 'worker-queue', os.getenv('WORKER_ID'))
     worker.start('rabbit')
 
 if __name__ == '__main__':
