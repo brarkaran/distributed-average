@@ -33,13 +33,9 @@ Checkout the deployed version: [Distributed Sum](https://distributed.ephemeron.i
 
 ### Installation Steps
 
-1. Clone the repository: `git clone [repo-link]`
-2. Install dependencies for each component:
-   - API: `cd api && npm install`
-   - Worker: `cd worker && pip install -r requirements.txt`
-   - UI: `cd ui && npm install`
-3. Set up environment variables/config files as needed.
-4. Run `docker build`, the UI will launch at `localhost:3000`
+1. Clone the repository: `git clone [repo-link]`.
+2. Set up environment variables/config files as needed.
+3. Run `docker build`, the UI will launch at `localhost:3000`.
 
 <!-- ## Usage
 
