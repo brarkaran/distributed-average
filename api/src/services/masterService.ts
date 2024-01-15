@@ -17,7 +17,7 @@ export class MasterService {
     private outputQueue: string;
     private workerQueue: string;
     private taskPartitionSize: number = 5;
-    private retryInterval: number = 1000;
+    private retryInterval: number = 10000;
 
     // map job id to object which tracks total duration across completed tasks and number of completed tasks to keep a running average,
     // this is used in our scheduling stragegy to determine which task needs rescheduling
