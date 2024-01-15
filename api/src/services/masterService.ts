@@ -121,7 +121,7 @@ export class MasterService {
         // get incomplete jobs
         const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
         // get incomplete tasks for those jobs
-        const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED));
+        const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED && task.status !== TaskStatus.PENDING));
         incompleteTasks.forEach(task => {
             const metrics = this.metrics.get(task.jobId);
             // only reschedule tasks for jobs that are almost complete
