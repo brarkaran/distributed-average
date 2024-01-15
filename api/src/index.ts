@@ -11,7 +11,7 @@ const cors = require('cors');
 
 
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config('../.env');
+    require('dotenv').config('../../.env');
 }
 
 const WORKER_QUEUE = process.env.WORKER_QUEUE || 'worker-queue';

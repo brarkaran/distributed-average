@@ -1,4 +1,4 @@
-# Project Title: Distributed File Processing System
+# Distributed File Processing System
 
 ## Introduction
 
@@ -30,12 +30,15 @@ Checkout the deployed version: [Distributed Average](https://distributed.ephemer
 - Node.js
 - Python
 - React
+- Docker
+- AWS
+- Rust (if you want fast local file generation)
 
 ### Installation Steps
 
 1. Clone the repository: `git clone [repo-link]`.
-2. Set up environment variables/config files as needed.
-3. Run `docker build`, the UI will launch at `localhost:3000`.
+2. Set up environment, see [example env](.env.example) for required variables .
+3. Run `docker compose up`
 
 <!-- ## Usage
 
@@ -56,9 +59,10 @@ Upon receiving $F$ files for processing, the Master node divides them into tasks
 
 To address variations in worker processing speeds and minimize idle time during each summation phase, a speculative execution strategy is employed. The Master maintains statistics on the average completion time for tasks and periodically reschedules tasks based on certain conditions:
 
-The job is close to completion (over 75% of tasks are complete).
-Some tasks have been running for longer than 1.2 times the average duration.
-These criteria help ensure that worker nodes are fully utilized and that slower-performing tasks do not unduly delay a summation phase. The specific constants used in this strategy may require tuning to optimize system performance.
+- The job is close to completion (over 75% of tasks are complete).
+- Some tasks have been running for longer than 1.2 times the average duration.
+
+These criteria help ensure that worker nodes are fully utilized and that stragglers tasks do not unduly delay a summation phase. The specific constants used in this strategy may require tuning to optimize system performance.
 
 ### The Choice of P
 
@@ -70,7 +74,7 @@ A potential downside to this approach lies in its interaction with our speculati
 
 ## Disclaimer
 
-As is probably obvious from the looks of the UI, I am not a frontend engineer so I apologize for it's lack of flair and ugliness.
+As is probably obvious from the looks of the UI, I am not a frontend engineer. I apologize, I know it sucks. I promise I don't have bad taste.
 
 ## Acknowledgments
 

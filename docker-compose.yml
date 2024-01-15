@@ -34,6 +34,7 @@ services:
     env_file:
       - ./api/.env
     environment:
+      - 
       - API_HOST=http://api:8000
       - PYTHONUNBUFFERED=1
     depends_on:

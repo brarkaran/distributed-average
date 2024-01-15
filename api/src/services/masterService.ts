@@ -117,6 +117,7 @@ export class MasterService {
     }
 
     getLongRunningTasks(): Task[] {
+        console.log("Getting long running tasks");
         const potentialTasks: Task[] = [];
         const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
         const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED && task.status !== TaskStatus.PENDING));
