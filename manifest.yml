@@ -65,6 +65,7 @@ spec:
       containers:
         - name: api
           image: neoatom/api:latest
+          imagePullPolicy: Always
           command:
             - "node"
             - "build/index.js"
@@ -165,6 +166,7 @@ spec:
       containers:
       - name: frontend
         image: neoatom/frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
 ---

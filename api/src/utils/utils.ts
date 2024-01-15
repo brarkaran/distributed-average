@@ -1,8 +1,4 @@
-import * as AWS from 'aws-sdk';
-import * as parse from 'csv-parse/lib/sync';
-import * as stringify from 'csv-stringify/lib/sync';
-
-const s3 = new AWS.S3();
+import aws from 'aws-sdk';
 
 export function partitionArray<T>(inputArray: T[], size: number): T[][] {
     return inputArray.reduce((accumulator: T[][], currentValue, currentIndex) => {
@@ -15,28 +11,27 @@ export function partitionArray<T>(inputArray: T[], size: number): T[][] {
     }, []);
 }
 
+// horrible things happen here
 export async function processCsvFile(bucket: string, key: string, divisor: number, newKey: string): Promise<string> {
-    const file = await s3.getObject({ Bucket: bucket, Key: key }).promise();
+    console.log(`Processing file ${key} in bucket ${bucket}`);
+    const s3Client = new aws.S3();
+    const params = {
+        Bucket: bucket,
+        Key: key
+    };
+    const data = await (new aws.S3()).getObject(params).promise();
+    if (!data.Body) {
+        throw new Error("File not readable");
+    }
+    const fileContent = data.Body.toString('utf-8');
+    const numbers = fileContent.split(/,\s*/)?.map(num => parseFloat(num) / divisor);
 
-    const records = parse(file.Body?.toString(), {
-        columns: true,
-        skip_empty_lines: true
-    });
-
-    const processedRecords = records.map((record: any) => {
-        const processedRecord: any = {};
-        for (const [key, value] of Object.entries(record)) {
-            processedRecord[key] = !isNaN(value as number) ? Number(value) / divisor : value;
-        }
-        return processedRecord;
-    });
-
-    const csv = stringify(processedRecords, { header: true });
-
-    await s3.putObject({
+    const csv = numbers.join(',');
+    const putObjectParams = {
         Bucket: bucket,
         Key: newKey,
         Body: csv
-    }).promise();
+    };
+    await s3Client.putObject(putObjectParams).promise();
     return newKey;
 }

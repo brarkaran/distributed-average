@@ -5,7 +5,6 @@ import { IQueueService } from "../interfaces/queueService";
 import { partitionArray, processCsvFile } from "../utils/utils";
 import { TaskStatus } from "../models/task";
 import { JobStatus } from "../models/job";
-import { StorageStrategy } from "./fileGeneratorService";
 
 // TODO: Need some kind of job scheduler to handler worker failures
 // TODO: Need metrics for job scheduler
