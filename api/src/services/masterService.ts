@@ -91,11 +91,8 @@ export class MasterService {
                 );
                 await this.queueService.sendMessages(this.workerQueue, tasks);
             }
+            // round of reduction is complete, delete those tasks
             tasksForGivenJob.forEach(task => this.taskService.removeTask(task.id));
-            // probably should delete these tasks to be sure since they're completed
-            // but we'll leave them in for now lmao just realized this is source of bug,
-            // need to delete completed tasks so we keep reducing output unless we keep track of it
-            // differently
         }
     }
 

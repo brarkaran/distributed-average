@@ -3,18 +3,18 @@ import { IWorkerService } from "../interfaces/workerService";
 
 module.exports = (workerService: IWorkerService) => {
     const router = express.Router();
-    router.post('/worker', async (req: any, res: any) => {
+    router.post('/workers/initialize', async (req: any, res: any) => {
         const numWorkers = req.body.numWorkers;
         if (!numWorkers) {
             res.status(400).json({ message: "Missing numWorkers field" });
             return;
         }
-        await workerService.init(numWorkers);
-        res.status(200).json("Workers initialized");
+        const result = await workerService.init(numWorkers);
+        res.status(200).json({ message: `Initialized ${result.length} workers` });
     });
-    router.get('/worker', async (req: any, res: any) => {
+    router.get('/workers', async (req: any, res: any) => {
         const workers = workerService.getWorkers();
-        res.status(200).json(workers);
+        res.status(200).json({ workers });
     }
     );
     // update worker status

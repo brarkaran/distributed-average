@@ -179,9 +179,21 @@ class S3FileHandler(FileHandlerInterface):
 
 # Task Management Class
 class TaskWorker:
-    def __init__(self, file_handler, queue_name):
+    def __init__(self, file_handler, queue_name, worker_id):
         self.file_handler = file_handler
         self.queue_name = queue_name
+        self.worker_id = worker_id
+        self.worker_service_notification("IDLE")
+
+    def worker_service_notification(self, status):
+        # let worker service know I'm idling right now
+        """Call the complete task API endpoint."""
+        url = f'{BASE_URL}/worker/{self.worker_id}/status'
+        data = {'status': status}
+        response = s.post(url, json=data)
+        print(f"RESPONSE {response}")
+        return response.json()
+
 
     def acquire_task(self, task_id, job_id):
         """Call the acquire task API endpoint."""
@@ -251,13 +263,15 @@ class TaskWorker:
         return average_array
     
     def on_message_received(self, ch, method, properties, body):
+        self.worker_service_notification("BUSY")
         task = json.loads(body)
         self.process_task(task)
         # if random.random() < 0.7:
         #     # raise Exception("Crash!")
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        self.worker_service_notification("IDLE")
         # else:
-        #     print("I not acknowledging")
+        #     print("I am not acknowledging")
     
     def start(self, rabbitmq_host):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))

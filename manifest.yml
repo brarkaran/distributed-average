@@ -108,45 +108,45 @@ spec:
       port: 8000
       targetPort: 8000
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: workers
-spec:
-  replicas: 5
-  selector:
-    matchLabels:
-      app: workers
-  template:
-    metadata:
-      labels:
-        app: workers
-    spec:
-      containers:
-        - name: workers
-          image: neoatom/workers:latest
-          env:
-            - name: API_HOST
-              value: "http://api:8000"
-            - name: PYTHONUNBUFFERED
-              value: "1"
-            - name: AWS_REGION
-              value: "us-east-1"
-            - name: AWS_BUCKET_NAME
-              value: "codebucker"
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: AWS_SECRET_ACCESS_KEY
-      imagePullSecrets:
-        - name: regcred
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: workers
+# spec:
+#   replicas: 5
+#   selector:
+#     matchLabels:
+#       app: workers
+#   template:
+#     metadata:
+#       labels:
+#         app: workers
+#     spec:
+#       containers:
+#         - name: workers
+#           image: neoatom/workers:latest
+#           env:
+#             - name: API_HOST
+#               value: "http://api:8000"
+#             - name: PYTHONUNBUFFERED
+#               value: "1"
+#             - name: AWS_REGION
+#               value: "us-east-1"
+#             - name: AWS_BUCKET_NAME
+#               value: "codebucker"
+#             - name: AWS_ACCESS_KEY_ID
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: aws-secret
+#                   key: AWS_ACCESS_KEY_ID
+#             - name: AWS_SECRET_ACCESS_KEY
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: aws-secret
+#                   key: AWS_SECRET_ACCESS_KEY
+#       imagePullSecrets:
+#         - name: regcred
 ---
 apiVersion: apps/v1
 kind: Deployment
