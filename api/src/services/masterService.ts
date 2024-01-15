@@ -2,9 +2,10 @@ import { IJobService } from "../interfaces/jobService";
 import { ITaskService } from "../interfaces/taskService";
 import { IWorkerService } from "../interfaces/workerService";
 import { IQueueService } from "../interfaces/queueService";
-import { partitionArray } from "../utils/utils";
+import { partitionArray, processCsvFile } from "../utils/utils";
 import { TaskStatus } from "../models/task";
 import { JobStatus } from "../models/job";
+import { StorageStrategy } from "./fileGeneratorService";
 
 // TODO: Need some kind of job scheduler to handler worker failures
 // TODO: Need metrics for job scheduler
@@ -70,7 +71,7 @@ export class MasterService {
             console.warn(`Task ${taskId} does not exist or is already completed`);
             return null;
         }
-        // check if job is complete 
+        // check if job is complete
         // TODO: this should be part of the task service
         const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
         console.log(`tasks for job ${jobId}`)
@@ -79,9 +80,13 @@ export class MasterService {
             // collect task outputs
             const output = tasksForGivenJob.flatMap(t => t.output || []);
             if (output.length == 1) {
-                // no more rounds of reduction needed, job is complete
-                this.jobService.completeJob(jobId, output);
-                await this.queueService.sendMessages(this.outputQueue, output);
+                // no more rounds of reduction needed, job is complete after dividing by number of files
+                // this is REALLY hacky, but it works for now - I apologise, future me
+                // Tasks should have had a "round" type field from the start - SUM or DIVIDE
+                const divisor = job.input.length;
+                const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, output[0], divisor, `dynamofl-outputs/${jobId}.csv`);
+                this.jobService.completeJob(jobId, [newKey]);
+                await this.queueService.sendMessages(this.outputQueue, [newKey]);
             } else {
                 // more rounds of reduction needed, create new tasks for this job
                 const tasks = partitionArray(output, this.taskPartitionSize).map((input: string[], index: number) => {

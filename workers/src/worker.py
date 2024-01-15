@@ -99,17 +99,17 @@ class TaskWorker:
 
             filenames = task['input']
             output_file_name = f"{task_id}.csv"
-            average_array = self.average_files(filenames)
-            if average_array is None:
+            sum_array = self.sum_files(filenames)
+            if sum_array is None:
                 raise ValueError("Error in averaging files")
 
-            self.file_handler.write(np.array2string(average_array, separator=',')[1:-1], output_file_name)
+            self.file_handler.write(np.array2string(sum_array, separator=',')[1:-1], output_file_name)
             self.complete_task(task_id, job_id, [output_file_name])
         except Exception as e:
             logging.error(f"Error processing task {task_id}: {e}")
             # Optionally, add a task failure notification here
 
-    def average_files(self, filenames):
+    def sum_files(self, filenames):
         try:
             arrays = []
             for file_id in filenames:
@@ -119,9 +119,9 @@ class TaskWorker:
             if not all(a.shape == arrays[0].shape for a in arrays):
                 raise ValueError("All files must have the same number of elements.")
 
-            return np.mean(np.stack(arrays), axis=0)
+            return np.sum(np.stack(arrays), axis=0)
         except Exception as e:
-            logging.error(f"Error in average_files: {e}")
+            logging.error(f"Error in sum_files: {e}")
             raise
 
     def on_message_received(self, ch, method, properties, body):
