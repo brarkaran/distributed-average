@@ -3,7 +3,6 @@ import { FileGenerator } from "../services/fileGeneratorService";
 
 module.exports = (fileGenerator: FileGenerator) => {
     const router = express.Router();
-    // files generation request
     router.post('/files/generate', async (req: any, res: any) => {
         const numFiles = req.body.numFiles;
         const numPerFile = req.body.numPerFile;

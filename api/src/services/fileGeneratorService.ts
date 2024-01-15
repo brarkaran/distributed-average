@@ -3,12 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
-// Define a strategy interface
 export interface StorageStrategy {
     save(data: string, fileName: string): Promise<string>;
 }
 
-// Implement S3 storage strategy
 export class S3StorageStrategy implements StorageStrategy {
     private s3: aws.S3;
     private bucket: string;
@@ -32,7 +30,6 @@ export class S3StorageStrategy implements StorageStrategy {
     }
 }
 
-// Implement local storage strategy
 export class LocalStorageStrategy implements StorageStrategy {
     private basePath: string;
 

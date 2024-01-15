@@ -1,4 +1,3 @@
-// src/services/QueueService.ts
 import { IQueueService } from '../interfaces/queueService';
 import amqp from 'amqplib';
 
