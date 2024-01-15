@@ -22,7 +22,7 @@ module.exports = (workerService: IWorkerService) => {
     }
     );
     // update worker status
-    router.post('/worker/:workerId/status', async (req: any, res: any) => {
+    router.post('/workers/:workerId/status', async (req: any, res: any) => {
         const workerId = req.params.workerId;
         const status = req.body.status;
         if (!status) {

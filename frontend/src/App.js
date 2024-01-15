@@ -108,7 +108,7 @@ function App() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get('https://api.ephemeron.io/job');
+      const response = await axios.get('https://api.ephemeron.io/jobs');
       setJobs(response.data);
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -184,14 +184,14 @@ function App() {
     setJobSubmissionStatus('');
 
     try {
-      const files = await axios.post('https://api.ephemeron.io/files', {
+      const files = await axios.post('https://api.ephemeron.io/files/generate', {
         numFiles: numberOfFiles,
         numPerFile: countPerFile,
       });
       setIsGeneratingFiles(false);
       setIsSubmittingJob(true);
 
-      await axios.post('https://api.ephemeron.io/job', {
+      await axios.post('https://api.ephemeron.io/jobs/schedule', {
         input: files.data.files,
       });
       setIsSubmittingJob(false);

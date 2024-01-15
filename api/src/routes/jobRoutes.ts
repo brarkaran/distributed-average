@@ -3,11 +3,11 @@ import { IJobService } from "../interfaces/jobService";
 
 module.exports = (jobService: IJobService) => {
     const router = express.Router();
-    router.get('/job', async (req: any, res: any) => {
+    router.get('/jobs', async (req: any, res: any) => {
         const jobs = jobService.getJobs();
         res.status(200).json(jobs);
     });
-    router.get('/job/:jobId', async (req: any, res: any) => {
+    router.get('/jobs/:jobId', async (req: any, res: any) => {
         const jobId = req.params.jobId;
         const job = jobService.getJob(jobId);
         if (!job) {

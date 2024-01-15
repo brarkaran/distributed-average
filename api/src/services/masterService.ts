@@ -45,6 +45,8 @@ export class MasterService {
         console.log(`Job ${job.id} partitioned into ${tasks.length} tasks`);
         console.log(`Sending ${tasks.length} tasks to worker queue ${this.workerQueue}`)
         await this.queueService.sendMessages(this.workerQueue, tasks);
+        console.log(`Job ${job.id} started`);
+        return job;
     }
     // Called by workers via API to acquire a task
     startTask(jobId: string, taskId: string) {

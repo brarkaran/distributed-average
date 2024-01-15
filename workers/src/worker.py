@@ -58,7 +58,7 @@ class TaskWorker:
 
     def worker_service_notification(self, status):
         try:
-            url = f'{BASE_URL}/worker/{self.worker_id}/status'
+            url = f'{BASE_URL}/workers/{self.worker_id}/status'
             data = {'status': status}
             response = requests.post(url, json=data)
             if response.status_code != 200:
@@ -68,7 +68,7 @@ class TaskWorker:
             logging.error(f"Error in worker_service_notification: {e}")
 
     def acquire_task(self, task_id, job_id):
-        url = f'{BASE_URL}/job/{job_id}/task/{task_id}/start'
+        url = f'{BASE_URL}/jobs/{job_id}/tasks/{task_id}/start'
         try:
             response = requests.post(url)
             if response.status_code != 200:
@@ -79,7 +79,7 @@ class TaskWorker:
             return "error"
 
     def complete_task(self, task_id, job_id, output):
-        url = f'{BASE_URL}/job/{job_id}/task/{task_id}/complete'
+        url = f'{BASE_URL}/jobs/{job_id}/tasks/{task_id}/complete'
         try:
             data = {'output': output}
             response = requests.post(url, json=data)
