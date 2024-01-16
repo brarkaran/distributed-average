@@ -87,11 +87,14 @@ export class MasterService {
 
         this.currentFiles = this.currentFiles.concat(output);
 
+        console.log(this.currentFiles)
+
         if (this.currentFiles.length >= 2) {
             const task = this.taskService.addTask({
                 jobId: job.id,
                 input: this.currentFiles
             });
+            console.log(`Sending ${task} to worker queue ${this.workerQueue}`)
             await this.queueService.sendMessages(this.workerQueue, [task]);
             // const tasks = partitionArray(output, this.taskPartitionSize).map((input: string[], index: number) => {
             //     //                 return this.taskService.addTask({
@@ -106,9 +109,12 @@ export class MasterService {
             const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
             const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
             if (completed) {
+                console.log("I am done")
                 const divisor = job.input.length;
+                console.log(this.currentFiles)
                 const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, this.currentFiles[0], divisor, `dynamofl-outputs/${jobId}.csv`);
                 this.jobService.completeJob(jobId, [newKey]);
+                this.currentFiles = [];
                 await this.queueService.sendMessages(this.outputQueue, [newKey]);
             }
         }
@@ -195,45 +201,45 @@ export class MasterService {
     //         tasksForGivenJob.forEach(task => this.taskService.removeTask(task.id));
     //     }
     // }
-    getLongRunningTasks(): Task[] {
-        console.log("Getting long running tasks");
-        const potentialTasks: Task[] = [];
-        const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
-        const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED && task.status !== TaskStatus.PENDING));
-        incompleteTasks.forEach(task => {
-            const metrics = this.metrics.get(task.jobId);
-            // only reschedule tasks for jobs that are almost complete
-            // total tasks will be close to this number
-            const totalTasks = (this.jobService.getJob(task.jobId)!.input.length - 1) / (this.taskPartitionSize - 1)
-            if (!metrics || metrics.totalCompleted < RESCHEDULING_COMPLETION_THRESHOLD * totalTasks) {
-                return [];
-            }
-            // if current task is taking longer than average, reschedule it
-            if (1.5 * (new Date().getTime() - task.startTime!) > metrics!.totalCompletedDuration / metrics!.totalCompleted) {
-                potentialTasks.push(task);
-            }
-        }
-        );
-        return potentialTasks;
-    }
-    async retryTasks(tasks: Task[]) {
-        console.log(`Retrying ${tasks.length} tasks`);
-        tasks.forEach(task => {
-            this.taskService.updateTask(task.id, { status: TaskStatus.PENDING });
-        });
-        await this.queueService.sendMessages(this.workerQueue, tasks);
-    }
-    startMonitoring() {
-        setInterval(() => {
-            console.log("Monitoring long running tasks");
-            const longRunningTasks = this.getLongRunningTasks();
-            console.log(`Found ${longRunningTasks.length} long running tasks`);
-            if (longRunningTasks.length > 0) {
-                console.log(`Retrying ${longRunningTasks} tasks`);
-                this.retryTasks(longRunningTasks);
-            } else {
-                console.log(`No long running tasks found`);
-            }
-        }, this.retryInterval);
-    }
+    // getLongRunningTasks(): Task[] {
+    //     console.log("Getting long running tasks");
+    //     const potentialTasks: Task[] = [];
+    //     const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
+    //     const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED && task.status !== TaskStatus.PENDING));
+    //     incompleteTasks.forEach(task => {
+    //         const metrics = this.metrics.get(task.jobId);
+    //         // only reschedule tasks for jobs that are almost complete
+    //         // total tasks will be close to this number
+    //         const totalTasks = (this.jobService.getJob(task.jobId)!.input.length - 1) / (this.taskPartitionSize - 1)
+    //         if (!metrics || metrics.totalCompleted < RESCHEDULING_COMPLETION_THRESHOLD * totalTasks) {
+    //             return [];
+    //         }
+    //         // if current task is taking longer than average, reschedule it
+    //         if (1.5 * (new Date().getTime() - task.startTime!) > metrics!.totalCompletedDuration / metrics!.totalCompleted) {
+    //             potentialTasks.push(task);
+    //         }
+    //     }
+    //     );
+    //     return potentialTasks;
+    // }
+    // async retryTasks(tasks: Task[]) {
+    //     console.log(`Retrying ${tasks.length} tasks`);
+    //     tasks.forEach(task => {
+    //         this.taskService.updateTask(task.id, { status: TaskStatus.PENDING });
+    //     });
+    //     await this.queueService.sendMessages(this.workerQueue, tasks);
+    // }
+    // startMonitoring() {
+    //     setInterval(() => {
+    //         console.log("Monitoring long running tasks");
+    //         const longRunningTasks = this.getLongRunningTasks();
+    //         console.log(`Found ${longRunningTasks.length} long running tasks`);
+    //         if (longRunningTasks.length > 0) {
+    //             console.log(`Retrying ${longRunningTasks} tasks`);
+    //             this.retryTasks(longRunningTasks);
+    //         } else {
+    //             console.log(`No long running tasks found`);
+    //         }
+    //     }, this.retryInterval);
+    // }
 }

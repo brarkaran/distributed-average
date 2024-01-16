@@ -14,7 +14,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     env_file:
-      - ./api/.env
+      - ./.env
     
     ports:
       - "8000:8000"
@@ -23,18 +23,35 @@ services:
     depends_on:
       - rabbit
 
-  workers:
+  worker1:
     image: workers
     build: 
       context: ./workers
       dockerfile: Dockerfile
-    deploy:
-      mode: replicated
-      replicas: 5 # number of workers for testing
+    # deploy:
+    #   mode: replicated
+    #   replicas: 5 # number of workers for testing
     env_file:
-      - ./api/.env
+      - ./.env
     environment:
-      - 
+      - AM_I_SLOW=false
+      - API_HOST=http://api:8000
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - rabbit
+
+  workers2:
+    image: workers
+    build: 
+      context: ./workers
+      dockerfile: Dockerfile
+    # deploy:
+    #   mode: replicated
+    #   replicas: 5 # number of workers for testing
+    env_file:
+      - ./.env
+    environment:
+      - AM_I_SLOW=false
       - API_HOST=http://api:8000
       - PYTHONUNBUFFERED=1
     depends_on:
