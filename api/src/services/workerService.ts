@@ -63,7 +63,7 @@ const createPod = async (podId: string, simulateSlow: boolean) => {
                 image: 'neoatom/workers:latest',
                 env: [
                     { name: 'WORKER_ID', value: podId },
-                    { name: 'AM_I_SLOW', value: simulateSlow.toString() },
+                    { name: 'AM_I_SLOW', value: 'false' },
                     {
                         name: 'API_HOST',
                         value: 'http://api:8000'
