@@ -37,7 +37,7 @@ Checkout the deployed version: [Distributed Average](https://distributed.ephemer
 ### Installation Steps
 
 1. Clone the repository: `git clone [repo-link]`.
-2. Set up environment, see [example env](.env.example) for required variables .
+2. Set up environment, see [example env](.env.example) for required variables.
 3. Run `docker compose up`
 
 <!-- ## Usage
