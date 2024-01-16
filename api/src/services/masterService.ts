@@ -32,7 +32,7 @@ export class MasterService {
         this.outputQueue = outputQueue;
         this.workerQueue = workerQueue;
         this.taskPartitionSize = taskPartitionSize ? taskPartitionSize : this.taskPartitionSize;
-        this.startMonitoring();
+        // this.startMonitoring();
     }
 
     async scheduleJob(input: string[]) {
