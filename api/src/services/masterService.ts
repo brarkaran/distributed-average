@@ -107,7 +107,7 @@ export class MasterService {
             const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
             if (completed) {
                 const divisor = job.input.length;
-                const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, output[0], divisor, `dynamofl-outputs/${jobId}.csv`);
+                const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, this.currentFiles[0], divisor, `dynamofl-outputs/${jobId}.csv`);
                 this.jobService.completeJob(jobId, [newKey]);
                 await this.queueService.sendMessages(this.outputQueue, [newKey]);
             }
