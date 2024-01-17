@@ -40,6 +40,7 @@ export class MasterService {
         const job = this.jobService.addJob({
             input: input
         });
+        console.log(`About to create job logging current state of files: ${this.currentFiles}`)
         console.log(`Job ${job.id} created`);
         // partition tasks into smaller chunks
         const tasks = partitionArray(input, this.taskPartitionSize).map((input: string[], index: number) => {
@@ -88,7 +89,7 @@ export class MasterService {
 
         this.currentFiles = this.currentFiles.concat(output);
 
-        console.log(this.currentFiles)
+        console.log(`current files are ${this.currentFiles}`)
 
         if (this.currentFiles.length >= 2) {
             const task = this.taskService.addTask({
