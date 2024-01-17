@@ -14,8 +14,9 @@ module.exports = (masterService: MasterService) => {
         res.status(200).json({ message: "Job scheduled", job });
     });
     router.post('/jobs/:jobId/tasks/:taskId/start', async (req: any, res: any) => {
-        console.log("Received request to start task");
+        
         const taskId = req.params.taskId;
+        console.log(`Received request to start task ${taskId}`);
         const jobId = req.params.jobId;
         const task = masterService.startTask(jobId, taskId);
         if (!task) {
@@ -26,8 +27,8 @@ module.exports = (masterService: MasterService) => {
     }
     );
     router.post('/jobs/:jobId/tasks/:taskId/complete', async (req: any, res: any) => {
-        console.log("Received request to complete task");
         const taskId = req.params.taskId;
+        console.log(`Received request to complete task ${taskId} with output ${req.body.output}`);
         const jobId = req.params.jobId;
         const output = req.body.output;
         if (!output) {
