@@ -72,9 +72,11 @@ class TaskWorker:
     def acquire_task(self, task_id, job_id):
         url = f'{BASE_URL}/jobs/{job_id}/tasks/{task_id}/start'
         try:
+            logging.info(f"Acquiring task {task_id}...")
             response = requests.post(url)
             if response.status_code != 200:
                 raise requests.HTTPError(f"Failed to acquire task: {response.status_code}")
+            logging.info(f"Task {task_id} acquired")
             return "acquired"
         except requests.RequestException as e:
             logging.error(f"Error in acquire_task: {e}")
@@ -83,6 +85,7 @@ class TaskWorker:
     def complete_task(self, task_id, job_id, output):
         url = f'{BASE_URL}/jobs/{job_id}/tasks/{task_id}/complete'
         try:
+            logging.info(f"Completing task {task_id}...")
             data = {'output': output}
             response = requests.post(url, json=data)
             if response.status_code != 200:
@@ -93,6 +96,7 @@ class TaskWorker:
 
     def process_task(self, task):
         try:
+            logging.info(f"Processing task {task['id']}...")
             task_id = task['id']
             job_id = task['jobId']
             status = self.acquire_task(task_id, job_id)
@@ -107,6 +111,7 @@ class TaskWorker:
 
             self.file_handler.write(np.array2string(sum_array, separator=',')[1:-1], output_file_name)
             self.complete_task(task_id, job_id, [output_file_name])
+            logging.info(f"Task {task_id} processed successfully")
         except Exception as e:
             logging.error(f"Error processing task {task_id}: {e}")
             # Optionally, add a task failure notification here

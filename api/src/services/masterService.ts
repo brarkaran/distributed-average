@@ -96,14 +96,6 @@ export class MasterService {
             });
             console.log(`Sending ${JSON.stringify(task)} to worker queue ${this.workerQueue}`)
             await this.queueService.sendMessages(this.workerQueue, [task]);
-            // const tasks = partitionArray(output, this.taskPartitionSize).map((input: string[], index: number) => {
-            //     //                 return this.taskService.addTask({
-            //     //                     jobId: job.id,
-            //     //                     input: input
-            //     //                 });
-            //     //             }
-            //     //             );
-            //     //             await this.queueService.sendMessages(this.workerQueue, tasks);
             this.currentFiles = [];
         } else {
             const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
