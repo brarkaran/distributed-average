@@ -70,6 +70,8 @@ spec:
             - "node"
             - "build/index.js"
           env:
+            - name: SUM
+              value: "true"
             - name: NODE_ENV
               value: "production"
             - name: RABBIT_HOST
