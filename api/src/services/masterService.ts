@@ -108,7 +108,7 @@ export class MasterService {
             const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
             const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED) && this.currentFiles.length === 1;
             if (completed) {
-                console.log("I am done")
+                console.log(`I am done, I had to finish ${tasksForGivenJob.length} tasks`);
                 const divisor = SUM ? 1 : job.input.length;
                 console.log(this.currentFiles)
                 const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, this.currentFiles[0], divisor, `dynamofl-outputs/${jobId}.csv`);
@@ -119,96 +119,4 @@ export class MasterService {
         }
         release()
     }
-    // async completeTask(jobId: string, taskId: string, output: string[]) {
-    //     const job = this.jobService.getJob(jobId);
-    //     if (!job) {
-    //         // nothing to do, job doesn't exist
-    //         console.warn(`Job ${jobId} does not exist this is likely a bug`);
-    //         return null;
-    //     }
-    //     const task = this.taskService.finishTask(taskId, output)
-    //     if (!task) {
-    //         console.warn(`Task ${taskId} does not exist or is already completed`);
-    //         return null;
-    //     }
-    //     // update metrics
-    //     let metrics = this.metrics.get(jobId);
-    //     if (!metrics) {
-    //         metrics = { totalCompletedDuration: 0, totalCompleted: 0 };
-    //         this.metrics.set(jobId, metrics);
-    //     }
-    //     metrics.totalCompletedDuration += task.duration!;
-    //     metrics.totalCompleted++;
-    //     // check if job is complete
-    //     // TODO: this should be part of the task service
-    //     const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
-    //     console.log(`tasks for job ${jobId}`)
-    //     const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
-    //     if (completed) {
-    //         // collect task outputs
-    //         const output = tasksForGivenJob.flatMap(t => t.output || []);
-    //         if (output.length == 1) {
-    //             // no more rounds of reduction needed, job is complete after dividing by number of files
-    //             // this is REALLY hacky, but it works for now - I apologise, future me
-    //             // Tasks should have had a "round" type field from the start - SUM or DIVIDE
-    //             const divisor = job.input.length;
-    //             const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, output[0], divisor, `dynamofl-outputs/${jobId}.csv`);
-    //             this.jobService.completeJob(jobId, [newKey]);
-    //             await this.queueService.sendMessages(this.outputQueue, [newKey]);
-    //         } else {
-    //             // more rounds of reduction needed, create new tasks for this job
-    //             const tasks = partitionArray(output, this.taskPartitionSize).map((input: string[], index: number) => {
-    //                 return this.taskService.addTask({
-    //                     jobId: job.id,
-    //                     input: input
-    //                 });
-    //             }
-    //             );
-    //             await this.queueService.sendMessages(this.workerQueue, tasks);
-    //         }
-    //         // round of reduction is complete, delete those tasks
-    //         tasksForGivenJob.forEach(task => this.taskService.removeTask(task.id));
-    //     }
-    // }
-    // getLongRunningTasks(): Task[] {
-    //     console.log("Getting long running tasks");
-    //     const potentialTasks: Task[] = [];
-    //     const incompleteJobs = this.jobService.getJobs().filter(job => job.status !== JobStatus.COMPLETED);
-    //     const incompleteTasks = incompleteJobs.flatMap(job => this.taskService.getTasksForJob(job.id).filter(task => task.status !== TaskStatus.COMPLETED && task.status !== TaskStatus.PENDING));
-    //     incompleteTasks.forEach(task => {
-    //         const metrics = this.metrics.get(task.jobId);
-    //         // only reschedule tasks for jobs that are almost complete
-    //         // total tasks will be close to this number
-    //         const totalTasks = (this.jobService.getJob(task.jobId)!.input.length - 1) / (this.taskPartitionSize - 1)
-    //         if (!metrics || metrics.totalCompleted < RESCHEDULING_COMPLETION_THRESHOLD * totalTasks) {
-    //             return [];
-    //         }
-    //         // if current task is taking longer than average, reschedule it
-    //         if (1.5 * (new Date().getTime() - task.startTime!) > metrics!.totalCompletedDuration / metrics!.totalCompleted) {
-    //             potentialTasks.push(task);
-    //         }
-    //     }
-    //     );
-    //     return potentialTasks;
-    // }
-    // async retryTasks(tasks: Task[]) {
-    //     console.log(`Retrying ${tasks.length} tasks`);
-    //     tasks.forEach(task => {
-    //         this.taskService.updateTask(task.id, { status: TaskStatus.PENDING });
-    //     });
-    //     await this.queueService.sendMessages(this.workerQueue, tasks);
-    // }
-    // startMonitoring() {
-    //     setInterval(() => {
-    //         console.log("Monitoring long running tasks");
-    //         const longRunningTasks = this.getLongRunningTasks();
-    //         console.log(`Found ${longRunningTasks.length} long running tasks`);
-    //         if (longRunningTasks.length > 0) {
-    //             console.log(`Retrying ${longRunningTasks} tasks`);
-    //             this.retryTasks(longRunningTasks);
-    //         } else {
-    //             console.log(`No long running tasks found`);
-    //         }
-    //     }, this.retryInterval);
-    // }
 }
