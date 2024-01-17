@@ -10,6 +10,7 @@ import { JobStatus } from "../models/job";
 // we are assuming we are always making progress here, the metrics have to be different if we want to handle major failures
 const RESCHEDULING_COMPLETION_THRESHOLD = 0.75; // only think about rescheduling tasks for jobs that are 75% complete
 const SUM = process.env.SUM == "true" || false;
+const SUBSEQUENT_PARTITIONS = Number(process.env.SUBSEQUENT_PARTITIONS) || 2;
 
 export class MasterService {
     private jobService: IJobService;
@@ -94,8 +95,8 @@ export class MasterService {
         this.currentFiles = this.currentFiles.concat(output);
 
         console.log(`current files are ${this.currentFiles}`)
-        
-        if (this.currentFiles.length >= 2) {
+
+        if (this.currentFiles.length >= SUBSEQUENT_PARTITIONS) {
             const task = this.taskService.addTask({
                 jobId: job.id,
                 input: this.currentFiles
