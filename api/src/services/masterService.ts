@@ -4,6 +4,7 @@ import { IWorkerService } from "../interfaces/workerService";
 import { IQueueService } from "../interfaces/queueService";
 import { partitionArray, processCsvFile } from "../utils/utils";
 import { Task, TaskStatus } from "../models/task";
+import { Mutex } from 'async-mutex';
 import { JobStatus } from "../models/job";
 
 // we are assuming we are always making progress here, the metrics have to be different if we want to handle major failures
@@ -20,6 +21,7 @@ export class MasterService {
     private taskPartitionSize: number = 5;
     private retryInterval: number = 10000;
     private currentFiles: string[] = [];
+    private mutexForCurrentFiles = new Mutex();
 
     // map job id to object which tracks total duration across completed tasks and number of completed tasks to keep a running average,
     // this is used in our scheduling stragegy to determine which task needs rescheduling
@@ -87,10 +89,12 @@ export class MasterService {
         metrics.totalCompletedDuration += task.duration!;
         metrics.totalCompleted++;
 
+        const release = await this.mutexForCurrentFiles.acquire()
+
         this.currentFiles = this.currentFiles.concat(output);
 
         console.log(`current files are ${this.currentFiles}`)
-
+        
         if (this.currentFiles.length >= 2) {
             const task = this.taskService.addTask({
                 jobId: job.id,
@@ -112,37 +116,7 @@ export class MasterService {
                 await this.queueService.sendMessages(this.outputQueue, [newKey]);
             }
         }
-
-        // check if job is complete
-        // TODO: this should be part of the task service
-        // const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
-        // console.log(`tasks for job ${jobId}`)
-        // const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
-        // if (completed) {
-        //     // collect task outputs
-        //     const output = tasksForGivenJob.flatMap(t => t.output || []);
-        //     if (output.length == 1) {
-        //         // no more rounds of reduction needed, job is complete after dividing by number of files
-        //         // this is REALLY hacky, but it works for now - I apologise, future me
-        //         // Tasks should have had a "round" type field from the start - SUM or DIVIDE
-        //         const divisor = job.input.length;
-        //         const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, output[0], divisor, `dynamofl-outputs/${jobId}.csv`);
-        //         this.jobService.completeJob(jobId, [newKey]);
-        //         await this.queueService.sendMessages(this.outputQueue, [newKey]);
-        //     } else {
-        //         // more rounds of reduction needed, create new tasks for this job
-        //         const tasks = partitionArray(output, this.taskPartitionSize).map((input: string[], index: number) => {
-        //             return this.taskService.addTask({
-        //                 jobId: job.id,
-        //                 input: input
-        //             });
-        //         }
-        //         );
-        //         await this.queueService.sendMessages(this.workerQueue, tasks);
-        //     }
-        //     // round of reduction is complete, delete those tasks
-        //     tasksForGivenJob.forEach(task => this.taskService.removeTask(task.id));
-        // }
+        release()
     }
     // async completeTask(jobId: string, taskId: string, output: string[]) {
     //     const job = this.jobService.getJob(jobId);

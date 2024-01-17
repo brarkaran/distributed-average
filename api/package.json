@@ -55,6 +55,7 @@
     "@kubernetes/client-node": "^0.20.0",
     "@types/mongoose": "^5.11.97",
     "amqplib": "^0.10.3",
+    "async-mutex": "^0.4.0",
     "aws-sdk": "^2.1535.0",
     "axios": "^1.6.5",
     "cors": "^2.8.5",
