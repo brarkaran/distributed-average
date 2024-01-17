@@ -8,6 +8,7 @@ import { JobStatus } from "../models/job";
 
 // we are assuming we are always making progress here, the metrics have to be different if we want to handle major failures
 const RESCHEDULING_COMPLETION_THRESHOLD = 0.75; // only think about rescheduling tasks for jobs that are 75% complete
+const SUM = process.env.SUM == "true" || false;
 
 export class MasterService {
     private jobService: IJobService;
@@ -102,7 +103,7 @@ export class MasterService {
             const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
             if (completed) {
                 console.log("I am done")
-                const divisor = job.input.length;
+                const divisor = SUM ? 1 : job.input.length;
                 console.log(this.currentFiles)
                 const newKey = await processCsvFile(process.env.AWS_BUCKET_NAME!, this.currentFiles[0], divisor, `dynamofl-outputs/${jobId}.csv`);
                 this.jobService.completeJob(jobId, [newKey]);
