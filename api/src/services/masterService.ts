@@ -106,7 +106,7 @@ export class MasterService {
             this.currentFiles = [];
         } else {
             const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
-            const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
+            const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED) && this.currentFiles.length === 1;
             if (completed) {
                 console.log("I am done")
                 const divisor = SUM ? 1 : job.input.length;

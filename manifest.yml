@@ -70,6 +70,8 @@ spec:
             - "node"
             - "build/index.js"
           env:
+            - name: SUBSEQUENT_PARTITIONS
+              value: "5"
             - name: SUM
               value: "true"
             - name: NODE_ENV
