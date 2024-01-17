@@ -96,7 +96,7 @@ export class MasterService {
 
         console.log(`current files are ${this.currentFiles}`)
 
-        if (this.currentFiles.length >= SUBSEQUENT_PARTITIONS) {
+        if (this.currentFiles.length >= 2) {
             const task = this.taskService.addTask({
                 jobId: job.id,
                 input: this.currentFiles
@@ -106,7 +106,7 @@ export class MasterService {
             this.currentFiles = [];
         } else {
             const tasksForGivenJob = this.taskService.getTasks().filter(task => task.jobId === jobId);
-            const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED) && this.currentFiles.length === 1;
+            const completed = tasksForGivenJob.every(t => t.status === TaskStatus.COMPLETED);
             if (completed) {
                 console.log(`I am done, I had to finish ${tasksForGivenJob.length} tasks`);
                 const divisor = SUM ? 1 : job.input.length;

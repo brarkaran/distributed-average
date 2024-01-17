@@ -71,9 +71,9 @@ spec:
             - "build/index.js"
           env:
             - name: SUBSEQUENT_PARTITIONS
-              value: "5"
+              value: "2"
             - name: SUM
-              value: "true"
+              value: "false"
             - name: NODE_ENV
               value: "production"
             - name: RABBIT_HOST
